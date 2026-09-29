@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FarmStock — Farmer's Produce Inventory Tracker. A high-performance, bilingual agricultural inventory, harvest, and sales management platform honoring the farming community.">
+    <title>FarmStock — Farmer's Produce Inventory Tracker | பண்ணை விளைச்சல் இருப்பு தளம்</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Plus Jakarta Sans, Outfit, Mukta Malar (for crisp Tamil typography) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta+Malar:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Mukta Malar"', 'sans-serif'],
+                        display: ['"Outfit"', '"Mukta Malar"', 'sans-serif'],
+                        tamil: ['"Mukta Malar"', 'sans-serif'],
+                    },
+                    colors: {
+                        farm: {
+                            50: '#F0FDF4',
+                            100: '#DCFCE7',
+                            200: '#BBF7D0',
+                            300: '#86EFAC',
+                            400: '#4ADE80',
+                            500: '#22C55E',
+                            600: '#16A34A',
+                            700: '#15803D',
+                            800: '#166534',
+                            900: '#14532D',
+                            950: '#052E16',
+                        },
+                        earth: {
+                            50: '#FFFBEB',
+                            100: '#FEF3C7',
+                            200: '#FDE68A',
+                            300: '#FCD34D',
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                            700: '#B45309',
+                            800: '#92400E',
+                            900: '#78350F',
+                        },
+                        clay: {
+                            50: '#FFF7ED',
+                            100: '#FFEDD5',
+                            200: '#FED7AA',
+                            500: '#F97316',
+                            700: '#C2410C',
+                            800: '#9A3412',
+                        }
+                    },
+                    boxShadow: {
+                        'farm-card': '0 4px 20px -2px rgba(22, 163, 74, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+                        'farm-glow': '0 0 25px rgba(22, 163, 74, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth Scrolling & Custom Scrollbar */
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: #F1F5F3; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #16A34A; }
+
+        /* Multi-Page Views Transition */
+        .page-view { display: none; }
+        .page-view.active { display: block; animation: slideFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.995); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Subtle agricultural pattern */
+        .farm-pattern {
+            background-color: #F8FAF9;
+            background-image: radial-gradient(#15803D 0.5px, transparent 0.5px), radial-gradient(#15803D 0.5px, #F8FAF9 0.5px);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+            background-opacity: 0.04;
+        }
+
+        /* Pulse ring animation for optimal stock */
+        @keyframes pulseRing {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-indicator { animation: pulseRing 2.5s infinite ease-in-out; }
+
+        /* Print Invoice Styles */
+        @media print {
+            body { background: white !important; color: black !important; }
+            aside, header, #sidebar-nav, #toast-hub, .no-print, button, .audit-query-form { display: none !important; }
+            #view-reports { display: block !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .printable-sheet { border: 1px solid #ddd !important; box-shadow: none !important; display: block !important; }
+            main { margin: 0 !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+
+<body class="bg-[#F8FAF9] text-slate-800 min-h-screen flex font-sans antialiased selection:bg-farm-600 selection:text-white">
+
+<!-- Elegant Toast Notification Hub -->
+<div id="toast-hub" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none max-w-md w-full px-4"></div>
+
+<!-- ================= SIDEBAR NAVIGATION ================= -->
+<aside class="w-64 lg:w-72 bg-white border-r border-slate-200/80 flex flex-col justify-between p-5 sticky top-0 h-screen z-30 shadow-sm flex-shrink-0 select-none">
+    <div class="space-y-6">
+
+        <!-- Brand Identity -->
+        <div class="flex items-center gap-3.5 px-2 cursor-pointer group" onclick="navigateTo('dashboard')">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-farm-900 via-farm-700 to-farm-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-farm-700/25 group-hover:scale-105 transition-transform duration-300">
+                <i class="fa-solid fa-wheat-awn"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5">
+                    <h1 class="font-display font-black text-xl text-slate-900 tracking-tight leading-none">FarmStock</h1>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-farm-100 text-farm-800 border border-farm-200">v3.0</span>
+                </div>
+                <span class="text-[11px] font-bold text-farm-700 uppercase tracking-wider block mt-1" data-key="tagline">பண்ணை விளைச்சல் மேலாண்மை</span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs (Dedicated Full Pages) -->
+        <nav class="space-y-1.5 font-semibold text-xs" id="sidebar-nav">
+            <!-- 1. Dashboard -->
+            <button onclick="navigateTo('dashboard')" data-nav="dashboard" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-farm-50 text-farm-800 font-bold border border-farm-200/80 transition-all duration-200 text-left">
+                <i class="fa-solid fa-chart-pie text-base w-5 text-farm-600"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_dashboard">முகப்பு (Dashboard)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_dashboard_sub">பண்ணை நிலவரம் & தரவுகள்</span>
+                </div>
+            </button>
+
+            <!-- 2. Add Crop -->
+            <button onclick="navigateTo('new-crop')" data-nav="new-crop" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left">
+                <i class="fa-solid fa-seedling text-base w-5 text-slate-400"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_new_crop">புதிய பயிர் பதிவு (Add Crop)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_new_crop_sub">நேரடி புகைப்பட முன்னோட்டம்</span>
+                </div>
+            </button>
+
+            <!-- 3. Log Harvest -->
+            <button onclick="navigateTo('harvest')" data-nav="harvest" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left">
+                <i class="fa-solid fa-dolly text-base w-5 text-slate-400"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_harvest">அறுவடை பதிவு (Log Harvest)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_harvest_sub">களத்து வரவு பதிவு</span>
+                </div>
+            </button>
+
+            <!-- 4. Record Sale -->
+            <button onclick="navigateTo('sale')" data-nav="sale" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left">
+                <i class="fa-solid fa-cart-shopping text-base w-5 text-slate-400"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_sale">விற்பனை பதிவு (Record Sale)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_sale_sub">இருப்பு சரிபார்ப்புடன் கூடியது</span>
+                </div>
+            </button>
+
+            <!-- 5. Stock Inventory -->
+            <button onclick="navigateTo('inventory')" data-nav="inventory" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left">
+                <i class="fa-solid fa-boxes-stacked text-base w-5 text-slate-400"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_inventory">விளைச்சல் இருப்பு (Inventory)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_inventory_sub">புகைப்பட கேலரி & எச்சரிக்கைகள்</span>
+                </div>
+            </button>
+
+            <!-- 6. Revenue Audit -->
+            <button onclick="navigateTo('reports')" data-nav="reports" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left">
+                <i class="fa-solid fa-file-invoice-dollar text-base w-5 text-slate-400"></i>
+                <div class="flex-1">
+                    <span class="block text-sm" data-key="nav_reports">வருவாய் தணிக்கை (Audit & Sheet)</span>
+                    <span class="text-[10px] text-slate-400 font-normal block" data-key="nav_reports_sub">அச்சுக்குரிய ரசீது & நிதி அறிக்கை</span>
+                </div>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Farmer Dignity Card & Thirukkural Tribute -->
+    <div class="space-y-3 pt-4 border-t border-slate-100">
+        <div class="bg-gradient-to-br from-farm-950 via-farm-900 to-farm-800 text-white p-4 rounded-2xl shadow-md border border-farm-800/80 relative overflow-hidden">
+            <div class="absolute -right-3 -bottom-3 text-farm-800/30 text-6xl pointer-events-none">
+                <i class="fa-solid fa-wheat-awn"></i>
+            </div>
+            <div class="flex items-center justify-between text-amber-300 text-xs font-bold mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-award text-amber-400"></i> <span data-key="quote_badge">திருக்குறள் (உழவு)</span></span>
+                <span class="text-[10px] text-farm-300 font-mono">1031</span>
+            </div>
+            <p id="sidebar-quote-body" class="text-xs text-emerald-100 leading-relaxed font-tamil font-medium italic" data-key="quote_body">
+                "சுழன்றும் ஏர்ப்பின்னது உலகம் அதனால்<br>உழந்தும் உழவே தலை."
+            </p>
+            <div class="flex items-center justify-between mt-2 pt-2 border-t border-farm-800 text-[10px] text-emerald-300">
+                <span data-key="quote_sub">உழவர் போற்றுதும்</span>
+                <span class="font-bold" data-key="quote_author">— திருவள்ளுவர்</span>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <span class="text-[10px] text-slate-400 font-medium">Spring Boot 3 + MySQL 8 Connected</span>
+        </div>
+    </div>
+</aside>
+
+<!-- ================= MAIN CONTENT WRAPPER ================= -->
+<div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Top Sticky Header Bar -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-10 py-3.5 sticky top-0 z-20 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-farm-100 text-farm-700 flex items-center justify-center text-sm lg:hidden cursor-pointer" onclick="alert('Menu')">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+            <div>
+                <h2 id="current-page-title" class="font-display font-extrabold text-base lg:text-lg text-slate-900 leading-tight">
+                    பண்ணை முகப்பு (Dashboard)
+                </h2>
+                <p id="current-page-subtitle" class="text-[11px] text-slate-400 hidden sm:block">
+                    நிகழ்நேர விளைச்சல் வரவு, சந்தை விற்பனை மற்றும் இருப்பு கண்காணிப்பு
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Controls: Bilingual Switcher, Quick Sync, System Status -->
+        <div class="flex items-center gap-3">
+            <!-- Language Switcher -->
+            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold shadow-inner">
+                <button id="lang-ta" onclick="setLanguage('ta')" class="px-3 py-1.5 rounded-lg transition-all font-bold bg-white text-farm-800 shadow-sm flex items-center gap-1.5">
+                    <span>தமிழ்</span>
+                </button>
+                <button id="lang-en" onclick="setLanguage('en')" class="px-3 py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+                    <span>English</span>
+                </button>
+            </div>
+
+            <!-- Quick Sync Button -->
+            <button onclick="syncAll(true)" id="btn-sync" class="h-9 px-3.5 rounded-xl bg-farm-50 hover:bg-farm-100 active:bg-farm-200 text-farm-700 border border-farm-200 flex items-center gap-2 text-xs font-bold transition shadow-xs" title="Refresh Live Database">
+                <i class="fa-solid fa-rotate-right" id="sync-icon"></i>
+                <span class="hidden md:inline" data-key="btn_refresh">புதுப்பி (Sync)</span>
+            </button>
+
+            <!-- Live Status Indicator -->
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-indicator"></span>
+                <span data-key="sys_live">கணினி இயங்குகிறது</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT BODY (Router Target Screens) -->
+    <main class="max-w-7xl mx-auto p-5 sm:p-8 w-full flex-1">
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 1: DASHBOARD / முகப்பு                                                 -->
+        <!-- ========================================================================= -->
+        <div id="view-dashboard" class="page-view active space-y-8">
+
+            <!-- Dignified Farmer Hero Tribute Banner (High Definition Realistic Indian Farmer) -->
+            <section class="bg-gradient-to-r from-farm-900 via-farm-800 to-farm-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-farm-950/15 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-farm-700/60">
+                <!-- Decorative Background Glow -->
+                <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-farm-500/15 blur-3xl pointer-events-none"></div>
+
+                <div class="space-y-3.5 max-w-xl z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-farm-800/80 text-emerald-200 text-xs font-bold border border-farm-600/50 backdrop-blur-xs">
+                        <i class="fa-solid fa-sun text-amber-400"></i>
+                        <span id="greeting-badge" data-key="hero_badge">உழவுக்கும் தொழிலுக்கும் வந்தனை செய்வோம்</span>
+                    </div>
+
+                    <h2 class="font-display font-black text-2xl sm:text-3xl text-white leading-tight tracking-tight" data-key="hero_title">
+                        வணக்கம் உழவரே! உங்கள் பண்ணை விளைச்சல் இருப்பு & வருவாய் தளம்
+                    </h2>
+
+                    <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-normal" data-key="hero_desc">
+                        பண்ணை விளைச்சல்களின் அறுவடை வரவு, சந்தை விற்பனை, கையிருப்பு சமநிலை மற்றும் நிதி அறிக்கைகளை வெளிப்படையாகவும் துல்லியமாகவும் கண்காணிக்கும் நவீன வேளாண் தளம்.
+                    </p>
+
+                    <!-- Quick Action Shortcuts -->
+                    <div class="pt-2 flex flex-wrap gap-3">
+                        <button onclick="navigateTo('harvest')" class="px-5 py-2.5 rounded-xl bg-farm-500 hover:bg-farm-600 active:scale-95 text-farm-950 font-black text-xs shadow-lg shadow-farm-500/25 transition flex items-center gap-2">
+                            <i class="fa-solid fa-dolly"></i> <span data-key="btn_hero_harvest">அறுவடை பதிவு செய்க</span>
+                        </button>
+                        <button onclick="navigateTo('sale')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 transition flex items-center gap-2">
+                            <i class="fa-solid fa-cart-shopping"></i> <span data-key="btn_hero_sale">விற்பனை பதிவு செய்க</span>
+                        </button>
+                        <button onclick="navigateTo('new-crop')" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs backdrop-blur-sm border border-white/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> <span data-key="btn_hero_new">புதிய பயிர்</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dignified Indian Farmer Realistic Portrait (High-Definition Photography) -->
+                <div class="relative flex-shrink-0 z-10">
+                    <div class="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl overflow-hidden border-4 border-emerald-400/40 shadow-2xl shadow-black/40 group relative">
+                        <!-- High definition dignified Indian farmer in fertile fields -->
+                        <img src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=700&q=80" alt="Dignified Indian Farmer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-farm-950/80 via-transparent to-transparent"></div>
+                        <div class="absolute bottom-2.5 left-3 right-3 text-center">
+                            <span class="text-[11px] font-bold text-emerald-200 tracking-wide block drop-shadow-sm font-tamil" data-key="hero_portrait_caption">விவசாயி — நாட்டின் முதுகெலும்பு</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4 Executive KPI Metric Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Card 1: Total Crops -->
+                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-farm-card hover:shadow-lg transition-all duration-300 group">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500" data-key="card_total_crops">மொத்த பயிர் வகைகள்</span>
+                        <div class="w-11 h-11 rounded-2xl bg-farm-50 text-farm-600 flex items-center justify-center text-lg group-hover:bg-farm-600 group-hover:text-white transition-colors duration-300">
+                            <i class="fa-solid fa-leaf"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <h3 id="stat-crops" class="font-display text-3xl sm:text-4xl font-black text-slate-900">0</h3>
+                        <span class="text-xs font-semibold text-slate-400" data-key="lbl_crops_count">வகைகள்</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5 text-[11px] text-farm-700 font-semibold">
+                        <i class="fa-solid fa-circle-check text-farm-500"></i>
+                        <span data-key="card_crops_sub">பதிவு செய்யப்பட்ட பயிர்கள்</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Total Harvested -->
+                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-farm-card hover:shadow-lg transition-all duration-300 group">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500" data-key="card_harvested">மொத்த அறுவடை அளவு</span>
+                        <div class="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <h3 id="stat-harvest" class="font-display text-3xl sm:text-4xl font-black text-slate-900">0.0</h3>
+                        <span class="text-xs font-bold text-slate-400">kg</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5 text-[11px] text-blue-700 font-semibold">
+                        <i class="fa-solid fa-arrow-down-long text-blue-500"></i>
+                        <span data-key="card_harvest_sub">பண்ணை கிடங்கு வரவு</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Total Sold -->
+                <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-farm-card hover:shadow-lg transition-all duration-300 group">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500" data-key="card_sold">மொத்த விற்பனை அளவு</span>
+                        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg group-hover:bg-amber-600 group-hover:text-white transition-colors duration-300">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <h3 id="stat-sold" class="font-display text-3xl sm:text-4xl font-black text-slate-900">0.0</h3>
+                        <span class="text-xs font-bold text-slate-400">kg</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5 text-[11px] text-amber-700 font-semibold">
+                        <i class="fa-solid fa-arrow-up-long text-amber-500"></i>
+                        <span data-key="card_sold_sub">சந்தை நுகர்வோர் வழங்கல்</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Current In-Hand Warehouse Stock -->
+                <div class="bg-white p-5 rounded-3xl border-2 border-emerald-400/80 shadow-farm-card hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 text-emerald-100/50 text-6xl pointer-events-none">
+                        <i class="fa-solid fa-warehouse"></i>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-800" data-key="card_remaining">கையிருப்பு இருப்பு</span>
+                        <div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-600/30">
+                            <i class="fa-solid fa-warehouse"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <h3 id="stat-stock" class="font-display text-3xl sm:text-4xl font-black text-farm-800">0.0</h3>
+                        <span class="text-xs font-bold text-farm-600">kg</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-800 font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span data-key="card_remaining_sub">கிடங்கில் விற்பனைக்கு தயார்</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytical Charts & Visual Flow (Chart.js) -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Bar Chart: Harvest vs Sales Flow -->
+                <div class="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-farm-card space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-display font-extrabold text-base text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column text-farm-600"></i>
+                                <span data-key="chart_weekly_title">பயிர் வரவு & விற்பனை ஒப்பீடு (Crop Flow Analysis)</span>
+                            </h3>
+                            <p class="text-xs text-slate-400" data-key="chart_weekly_sub">ஒவ்வொரு பயிரின் மொத்த அறுவடை மற்றும் சந்தை விற்பனை அளவு (kg)</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs font-bold">
+                            <span class="inline-flex items-center gap-1.5 text-farm-700">
+                                <span class="w-3 h-3 rounded-md bg-farm-600 inline-block"></span> <span data-key="lbl_chart_harvest">அறுவடை</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 text-amber-600">
+                                <span class="w-3 h-3 rounded-md bg-amber-500 inline-block"></span> <span data-key="lbl_chart_sold">விற்பனை</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="h-72 w-full">
+                        <canvas id="cropFlowChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Donut Chart: Inventory vs Liquidated Sales Ratio -->
+                <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-farm-card flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="font-display font-extrabold text-base text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-amber-500"></i>
+                            <span data-key="chart_ratio_title">இருப்பு மற்றும் விற்பனை விகிதம்</span>
+                        </h3>
+                        <p class="text-xs text-slate-400" data-key="chart_ratio_sub">கிடங்கு இருப்புக்கும் விற்பனையானதற்குமான விகிதம்</p>
+                    </div>
+
+                    <div class="h-52 flex items-center justify-center relative my-2">
+                        <canvas id="stockRatioChart"></canvas>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-center">
+                        <div class="p-2.5 rounded-2xl bg-amber-50 border border-amber-100">
+                            <span class="text-slate-500 block text-[10px] font-bold uppercase" data-key="lbl_sold_ratio">விற்பனை</span>
+                            <span id="chart-lbl-sold" class="font-display text-base font-black text-amber-700">0.0 kg</span>
+                        </div>
+                        <div class="p-2.5 rounded-2xl bg-farm-50 border border-farm-100">
+                            <span class="text-slate-500 block text-[10px] font-bold uppercase" data-key="lbl_stock_ratio">கையிருப்பு</span>
+                            <span id="chart-lbl-remain" class="font-display text-base font-black text-farm-700">0.0 kg</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Highlighting Banner with Secondary Dignified Quote -->
+            <section class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-farm-card flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl flex-shrink-0">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-display font-bold text-sm text-slate-900" data-key="quote_2_title">"உழுவார் உலகத்தார்க்கு ஆணி அஃதாற்றாது எழுவாரை எல்லாம் பொறுத்து."</h4>
+                        <p class="text-xs text-slate-500 mt-0.5" data-key="quote_2_desc">மற்ற தொழில்களைச் செய்பவரையும் உழவரே தாங்கி நிற்கின்றனர் — குறள் 1032</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <button onclick="navigateTo('inventory')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition">
+                        <span data-key="btn_view_vault">முழு இருப்பை காண்க</span> <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                    </button>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 2: ADD NEW CROP (புதிய பயிர் பதிவு பக்கம்)                                -->
+        <!-- ========================================================================= -->
+        <div id="view-new-crop" class="page-view max-w-4xl mx-auto space-y-8">
+
+            <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-farm-card">
+                <!-- Page Header Banner -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-farm-50 text-farm-700 flex items-center justify-center text-2xl border border-farm-200 shadow-sm">
+                            <i class="fa-solid fa-seedling"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-black text-2xl text-slate-900" data-key="m_crop_title">புதிய பயிர் பதிவு பக்கம் (Add Crop)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5" data-key="m_crop_subtitle">பதிவு செய்யும் போதே நேரடி புகைப்பட முன்னோட்டத்துடன் புதிய பயிரை இணைக்கவும்</p>
+                        </div>
+                    </div>
+                    <button onclick="navigateTo('inventory')" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-boxes-stacked"></i> <span data-key="btn_back_inventory">இருப்புப் பட்டியல்</span>
+                    </button>
+                </div>
+
+                <!-- Two-Column Interactive Layout: Form on Left, Live Image Specimen Preview on Right -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mt-8 items-start">
+
+                    <!-- Form Column -->
+                    <form id="form-crop" class="md:col-span-7 space-y-6">
+                        <!-- Crop Name Input -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_crop_name">
+                                பயிர் பெயர் (Crop Name) *
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-wheat-awn absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="text" id="crop-name" required placeholder="Tomato, Onion, Paddy, Drumstick..." oninput="updateCropLivePreview()" class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-farm-500/15 focus:border-farm-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                            </div>
+                            <p class="text-[11px] text-farm-700 font-semibold mt-1.5 flex items-center gap-1.5">
+                                <i class="fa-solid fa-wand-magic-sparkles text-farm-500"></i>
+                                <span data-key="m_crop_photo_hint">பெயரை தட்டச்சு செய்யும்போது தானியங்கி உயர் தெளிவுத்திறன் புகைப்படம் இணைக்கப்படும்!</span>
+                            </p>
+                        </div>
+
+                        <!-- Quick Popular Crop Chips -->
+                        <div>
+                            <span class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2" data-key="lbl_quick_picks">விரைவு தேர்வுகள் (Quick Picks):</span>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="quickFillCrop('Onion', 'Vegetables')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_onion">🧅 Onion (வெங்காயம்)</button>
+                                <button type="button" onclick="quickFillCrop('Tomato', 'Vegetables')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_tomato">🍅 Tomato (தக்காளி)</button>
+                                <button type="button" onclick="quickFillCrop('Paddy', 'Grains')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_paddy">🌾 Paddy (நெல்)</button>
+                                <button type="button" onclick="quickFillCrop('Turmeric', 'Spices')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_turmeric">✨ Turmeric (மஞ்சள்)</button>
+                                <button type="button" onclick="quickFillCrop('Drumstick', 'Vegetables')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_drumstick">🌿 Drumstick (முருங்கை)</button>
+                                <button type="button" onclick="quickFillCrop('Coconut', 'Plantation')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_coconut">🥥 Coconut (தேங்காய்)</button>
+                                <button type="button" onclick="quickFillCrop('Banana', 'Fruits')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-farm-100 text-slate-700 hover:text-farm-800 text-xs font-bold transition border border-slate-200" data-key="chip_banana">🍌 Banana (வாழை)</button>
+                            </div>
+                        </div>
+
+                        <!-- Category Selector -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_crop_cat">
+                                வகைப்பாடு (Category)
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-tags absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="text" id="crop-category" placeholder="Vegetables, Fruits, Grains, Spices, Tubers, Cash Crops" oninput="updateCropLivePreview()" class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-farm-500/15 focus:border-farm-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Submit and Cancel Buttons -->
+                        <div class="pt-4 flex gap-4">
+                            <button type="button" onclick="navigateTo('dashboard')" class="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-600 hover:text-slate-900 font-bold text-xs hover:bg-slate-50 transition active:scale-95" data-key="btn_cancel">
+                                ரத்து / முகப்பு
+                            </button>
+                            <button type="submit" id="btn-submit-crop" class="flex-1 py-3.5 rounded-2xl bg-farm-600 hover:bg-farm-700 active:scale-95 text-white font-extrabold text-xs shadow-lg shadow-farm-600/30 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span data-key="btn_save_crop">பயிரை பதிவு செய்</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Right Column: Live Photo Specimen Card Preview -->
+                    <div class="md:col-span-5 bg-slate-50 p-5 rounded-3xl border border-slate-200/90 space-y-4">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-farm-600"></i> <span data-key="lbl_live_preview">நேரடி அட்டை முன்னோட்டம்</span></span>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px]" data-key="lbl_auto_detected">தானியங்கி பொருத்தம்</span>
+                        </div>
+
+                        <!-- Specimen Card -->
+                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md">
+                            <div class="relative h-48 w-full overflow-hidden bg-slate-200">
+                                <img id="crop-preview-img" src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80" alt="Produce Preview" class="w-full h-full object-cover transition-all duration-500">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                <div class="absolute top-3 right-3">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-farm-500 text-white shadow-sm" id="crop-preview-badge" data-key="lbl_crop_preview_badge">New Enrollment</span>
+                                </div>
+                                <div class="absolute bottom-3 left-4 right-4 text-white">
+                                    <h4 id="crop-preview-name" class="font-display font-extrabold text-xl leading-tight drop-shadow-sm">Tomato</h4>
+                                    <span id="crop-preview-category" class="text-xs text-emerald-200 font-medium" data-key="tab_veg">Vegetables</span>
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-2 text-xs">
+                                <div class="flex justify-between text-slate-600 font-semibold">
+                                    <span data-key="lbl_expected_reserve">தொடக்க இருப்பு</span>
+                                    <span class="text-farm-700 font-bold">0.0 kg</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                    <div class="bg-farm-600 h-2 rounded-full w-0"></div>
+                                </div>
+                                <p class="text-[11px] text-slate-400 pt-1" data-key="lbl_preview_note">
+                                    பயிர் பதிவு செய்யப்பட்டவுடன் அறுவடை மற்றும் விற்பனை பரிவர்த்தனைகளை தொடங்கலாம்.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 3: LOG HARVEST (அறுவடை பதிவு பக்கம்)                                   -->
+        <!-- ========================================================================= -->
+        <div id="view-harvest" class="page-view max-w-4xl mx-auto space-y-8">
+
+            <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-farm-card">
+                <!-- Page Header Banner -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl border border-blue-200 shadow-sm">
+                            <i class="fa-solid fa-dolly"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-black text-2xl text-slate-900" data-key="m_harvest_title">அறுவடை பதிவு பக்கம் (Log Harvest)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5" data-key="m_harvest_subtitle">பண்ணையிலிருந்து கிடங்கிற்கு புதிய விளைச்சல் வரவை பதிவு செய்க</p>
+                        </div>
+                    </div>
+                    <button onclick="navigateTo('inventory')" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-boxes-stacked"></i> <span data-key="btn_back_inventory">இருப்புப் பட்டியல்</span>
+                    </button>
+                </div>
+
+                <!-- Two-Column Interactive Layout: Harvest Form on Left, Stock Impact Preview on Right -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mt-8 items-start">
+
+                    <form id="form-harvest" class="md:col-span-7 space-y-6">
+                        <!-- Select Crop -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_select_crop">
+                                பயிர் தேர்வு (Select Target Crop) *
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-leaf absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <select id="harvest-crop" required onchange="updateHarvestPreview()" class="crop-select w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm bg-white focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition font-medium">
+                                    <option value="" data-key="lbl_select_crop_preview">Select Target Crop</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Quantity with Quick Presets -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider" data-key="m_harvest_qty">
+                                    அறுவடை எடை (Weight in kg) *
+                                </label>
+                                <span class="text-[11px] font-semibold text-blue-600" id="harvest-unit-label" data-key="lbl_unit_kg">கிலோகிராம் (kg)</span>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-scale-balanced absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="number" step="0.01" min="0.01" id="harvest-qty" required placeholder="100.0" oninput="updateHarvestPreview()" class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                            </div>
+
+                            <!-- Quick Preset Adders -->
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <button type="button" onclick="addHarvestWeight(25)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-xs font-bold transition">+25 kg</button>
+                                <button type="button" onclick="addHarvestWeight(50)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-xs font-bold transition">+50 kg</button>
+                                <button type="button" onclick="addHarvestWeight(100)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-xs font-bold transition">+100 kg</button>
+                                <button type="button" onclick="addHarvestWeight(500)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-xs font-bold transition">+500 kg</button>
+                            </div>
+                        </div>
+
+                        <!-- Harvest Date with Quick Pickers -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider" data-key="m_harvest_date">
+                                    அறுவடை தேதி (Harvest Date) *
+                                </label>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="setDateField('harvest-date', 0)" class="text-[11px] font-bold text-blue-600 hover:underline" data-key="btn_today">இன்று (Today)</button>
+                                    <span class="text-slate-300">|</span>
+                                    <button type="button" onclick="setDateField('harvest-date', -1)" class="text-[11px] font-bold text-slate-500 hover:underline" data-key="btn_yesterday">நேற்று (Yesterday)</button>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-calendar-days absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="date" id="harvest-date" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-blue-500/15 focus:border-blue-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-4 flex gap-4">
+                            <button type="button" onclick="navigateTo('dashboard')" class="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-600 hover:text-slate-900 font-bold text-xs hover:bg-slate-50 transition active:scale-95" data-key="btn_cancel">
+                                ரத்து / முகப்பு
+                            </button>
+                            <button type="submit" id="btn-submit-harvest" class="flex-1 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-dolly"></i>
+                                <span data-key="btn_save_harvest">அறுவடையை சேமிக்க</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Right Column: Crop Info & Inflow Preview -->
+                    <div class="md:col-span-5 bg-slate-50 p-5 rounded-3xl border border-slate-200/90 space-y-4">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-500">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-blue-600"></i> <span data-key="lbl_stock_impact">இருப்பு மாற்றம் முன்னோட்டம்</span></span>
+                            <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px]">Inbound Stock</span>
+                        </div>
+
+                        <!-- Crop Specimen Card -->
+                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                            <div class="relative h-40 w-full overflow-hidden bg-slate-200">
+                                <img id="harvest-preview-img" src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=700&q=80" alt="Harvest Crop" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
+                                <div class="absolute bottom-3 left-4 right-4 text-white">
+                                    <h4 id="harvest-preview-name" class="font-display font-bold text-lg leading-tight" data-key="lbl_select_crop_preview">Select Target Crop</h4>
+                                    <span id="harvest-preview-cat" class="text-xs text-blue-200" data-key="lbl_category">Category</span>
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-3 text-xs">
+                                <div class="flex justify-between items-center text-slate-600 font-semibold">
+                                    <span data-key="lbl_current_stock">தற்போதைய கையிருப்பு:</span>
+                                    <span id="harvest-preview-curr" class="font-bold text-slate-900">0.0 kg</span>
+                                </div>
+                                <div class="flex justify-between items-center text-blue-700 font-semibold">
+                                    <span data-key="lbl_incoming_harvest">புதிய வரவு அளவு:</span>
+                                    <span id="harvest-preview-add" class="font-bold text-blue-600">+ 0.0 kg</span>
+                                </div>
+                                <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-emerald-800 font-bold">
+                                    <span data-key="lbl_projected_total">புதிய மொத்த கையிருப்பு:</span>
+                                    <span id="harvest-preview-total" class="font-display font-black text-sm text-emerald-600">0.0 kg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-800 space-y-1">
+                            <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info"></i> <span data-key="lbl_tip_title">வேளாண் குறிப்பு</span></span>
+                            <p data-key="lbl_harvest_tip">அறுவடை பதிவு செய்யப்பட்டவுடன் உடனுக்குடன் கையிருப்பில் வரவு வைக்கப்பட்டு விற்பனைக்கு தயார் செய்யப்படும்.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 4: RECORD SALE (விற்பனை பதிவு பக்கம் - இருப்பு சரிபார்ப்பு)                   -->
+        <!-- ========================================================================= -->
+        <div id="view-sale" class="page-view max-w-4xl mx-auto space-y-8">
+
+            <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-farm-card">
+                <!-- Page Header Banner -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl border border-amber-200 shadow-sm">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-black text-2xl text-slate-900" data-key="m_sale_title">விற்பனை பதிவு பக்கம் (Record Sale)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5" data-key="m_sale_subtitle">கிடங்கு இருப்புக்கு உட்பட்டு சந்தை விற்பனை மற்றும் விலையை பதிவு செய்க</p>
+                        </div>
+                    </div>
+                    <button onclick="navigateTo('inventory')" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-boxes-stacked"></i> <span data-key="btn_back_inventory">இருப்புப் பட்டியல்</span>
+                    </button>
+                </div>
+
+                <!-- Two-Column Interactive Layout: Form on Left, Live Financial & Stock Guard on Right -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mt-8 items-start">
+
+                    <form id="form-sale" class="md:col-span-7 space-y-6">
+                        <!-- Select Crop -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_select_crop">
+                                பயிர் தேர்வு (Select Target Crop) *
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-leaf absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <select id="sale-crop" required onchange="onSaleCropChange()" class="crop-select w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm bg-white focus:ring-4 focus:ring-amber-500/15 focus:border-amber-600 transition font-medium">
+                                    <option value="" data-key="lbl_select_crop_preview">Select Target Crop</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Available Stock Indicator Bar -->
+                        <div id="sale-available-badge-box" class="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
+                            <span class="text-slate-600 font-semibold" data-key="lbl_inhand_stock">கிடங்கில் தற்போதைய கையிருப்பு:</span>
+                            <span id="sale-available-val" class="font-display font-black text-slate-800 text-sm">0.0 kg</span>
+                        </div>
+
+                        <!-- Live Stock Validation Warning (If Qty > In-Hand Stock) -->
+                        <div id="sale-stock-warning" class="hidden p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1 animate-pulse">
+                            <div class="flex items-center gap-2 font-bold">
+                                <i class="fa-solid fa-circle-exclamation text-rose-600 text-sm"></i>
+                                <span data-key="err_insufficient_title">எச்சரிக்கை: போதுமான இருப்பு இல்லை!</span>
+                            </div>
+                            <p id="sale-stock-warning-text" class="text-[11px] text-rose-700 leading-relaxed font-medium" data-key="err_insufficient_desc">
+                                கேட்கப்பட்ட விற்பனை அளவு கிடங்கு இருப்பை விட அதிகமாக உள்ளது. விற்பனை அனுமதிக்கப்படாது.
+                            </p>
+                        </div>
+
+                        <!-- Weight & Price per Unit Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Sale Weight -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_sale_qty">
+                                    விற்பனை எடை (kg) *
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-scale-unbalanced absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                    <input type="number" step="0.01" min="0.01" id="sale-qty" required placeholder="30.0" oninput="updateSaleCalculations()" class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-amber-500/15 focus:border-amber-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                                </div>
+                                <!-- Quick Percent Sliders -->
+                                <div class="flex gap-2 mt-2" id="quick-sale-presets">
+                                    <button type="button" onclick="setSalePercent(0.25)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 text-[10px] font-bold transition">25%</button>
+                                    <button type="button" onclick="setSalePercent(0.50)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 text-[10px] font-bold transition">50%</button>
+                                    <button type="button" onclick="setSalePercent(1.00)" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 text-[10px] font-bold transition" data-key="btn_sale_100">100% (All)</button>
+                                </div>
+                            </div>
+
+                            <!-- Price Per Kg -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="m_sale_price">
+                                    கிலோ விலை (₹ per kg) *
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">₹</span>
+                                    <input type="number" step="0.01" min="0.01" id="sale-price" required placeholder="45.0" oninput="updateSaleCalculations()" class="w-full pl-10 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-amber-500/15 focus:border-amber-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block" data-key="lbl_market_rate">சந்தை விலை விகிதம்</span>
+                            </div>
+                        </div>
+
+                        <!-- Sale Date -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider" data-key="m_sale_date">
+                                    விற்பனை தேதி (Sale Date) *
+                                </label>
+                                <button type="button" onclick="setDateField('sale-date', 0)" class="text-[11px] font-bold text-amber-700 hover:underline" data-key="btn_today">இன்று (Today)</button>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-calendar-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="date" id="sale-date" required class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 text-sm focus:ring-4 focus:ring-amber-500/15 focus:border-amber-600 transition bg-slate-50/50 focus:bg-white font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="pt-4 flex gap-4">
+                            <button type="button" onclick="navigateTo('dashboard')" class="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-600 hover:text-slate-900 font-bold text-xs hover:bg-slate-50 transition active:scale-95" data-key="btn_cancel">
+                                ரத்து / முகப்பு
+                            </button>
+                            <button type="submit" id="btn-submit-sale" class="flex-1 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-lg shadow-slate-900/30 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check"></i>
+                                <span data-key="btn_save_sale">விற்பனை செய்க</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Right Column: Live Sale Bill Receipt Preview & Balance Projection -->
+                    <div class="md:col-span-5 bg-gradient-to-br from-amber-50/60 to-earth-50/80 p-5 rounded-3xl border border-amber-200/90 space-y-4">
+                        <div class="flex items-center justify-between text-xs font-bold text-amber-900">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-receipt text-amber-700"></i> <span data-key="lbl_bill_preview">விற்பனை ரசீது மாதிரி</span></span>
+                            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-mono">LIVE TICKET</span>
+                        </div>
+
+                        <!-- Formal Bill Slip -->
+                        <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm space-y-4 font-mono text-xs">
+                            <div class="text-center pb-3 border-b border-dashed border-slate-200">
+                                <h5 class="font-display font-black text-sm text-slate-900">FARMOSTOCK AGRICULTURAL DISPATCH</h5>
+                                <span class="text-[10px] text-slate-400 block font-sans">Official Farmer Produce Sale Voucher</span>
+                            </div>
+
+                            <div class="space-y-2 text-slate-600">
+                                <div class="flex justify-between">
+                                    <span data-key="bill_produce">பயிர் / Produce:</span>
+                                    <span id="bill-crop-name" class="font-bold text-slate-900">—</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span data-key="bill_qty">அளவு / Quantity:</span>
+                                    <span id="bill-qty" class="font-bold text-slate-900">0.0 kg</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span data-key="bill_rate">கிலோ விலை / Rate:</span>
+                                    <span id="bill-rate" class="font-bold text-slate-900">₹0.00 / kg</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-dashed border-slate-300 flex justify-between items-baseline font-sans">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block" data-key="bill_gross">மொத்த விற்பனை மதிப்பு:</span>
+                                    <span class="text-[10px] text-emerald-700 font-bold" data-key="bill_farmer_payout">உழவர் வருவாய்</span>
+                                </div>
+                                <span id="bill-total" class="font-display font-black text-2xl text-farm-800">₹0.00</span>
+                            </div>
+
+                            <!-- Remaining Stock Projection -->
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-sans flex justify-between items-center">
+                                <span class="text-slate-500" data-key="bill_remaining_after">விற்பனைக்குப் பின் கையிருப்பு:</span>
+                                <span id="bill-remaining-stock" class="font-bold text-slate-800">0.0 kg</span>
+                            </div>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 leading-relaxed font-tamil">
+                            <i class="fa-solid fa-shield-halved text-amber-600 mr-1"></i>
+                            <span data-key="lbl_sale_rule_note">விதிமுறை: கிடங்கில் உள்ள கையிருப்பை விட கூடுதல் எடை விற்பனை செய்ய கணினி அனுமதிக்காது.</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 5: PRODUCE INVENTORY (விளைச்சல் இருப்பு கேலரி)                         -->
+        <!-- ========================================================================= -->
+        <div id="view-inventory" class="page-view space-y-6">
+
+            <!-- Title & Filters Bar -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-farm-card flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-display font-black text-xl text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-stacked text-farm-600"></i>
+                        <span data-key="vault_title">பண்ணை விளைச்சல் இருப்பு பக்கம் (Produce Inventory)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5" data-key="vault_sub">
+                        அறுவடை - விற்பனை = கையில் மீதமுள்ள துல்லியமான இருப்பு நிலை
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Search Input -->
+                    <div class="relative flex-1 sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="produce-search" placeholder="Search (Onion, Tomato)..." oninput="filterCards()" class="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white focus:border-farm-500 transition">
+                    </div>
+
+                    <!-- Add Crop Shortcut -->
+                    <button onclick="navigateTo('new-crop')" class="px-4 py-2.5 rounded-xl bg-farm-600 hover:bg-farm-700 active:scale-95 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 flex-shrink-0">
+                        <i class="fa-solid fa-plus"></i> <span data-key="btn_add_new_crop">புதிய பயிர் சேர்க்க</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-none" id="category-tabs">
+                <button onclick="setCategoryFilter('ALL')" data-cat="ALL" class="cat-pill px-4 py-2 rounded-xl bg-farm-600 text-white shadow-xs transition-all whitespace-nowrap">
+                    <span data-key="tab_all">அனைத்தும் (All)</span>
+                </button>
+                <button onclick="setCategoryFilter('Vegetables')" data-cat="Vegetables" class="cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap">
+                    <span data-key="tab_veg">காய்கறிகள் (Vegetables)</span>
+                </button>
+                <button onclick="setCategoryFilter('Fruits')" data-cat="Fruits" class="cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap">
+                    <span data-key="tab_fruits">பழங்கள் (Fruits)</span>
+                </button>
+                <button onclick="setCategoryFilter('Grains')" data-cat="Grains" class="cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap">
+                    <span data-key="tab_grains">தானியங்கள் (Grains)</span>
+                </button>
+                <button onclick="setCategoryFilter('Spices')" data-cat="Spices" class="cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap">
+                    <span data-key="tab_spices">நறுமணப் பொருட்கள் (Spices)</span>
+                </button>
+                <button onclick="setCategoryFilter('Other')" data-cat="Other" class="cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap">
+                    <span data-key="tab_other">பிற பயிர்கள் (Other)</span>
+                </button>
+            </div>
+
+            <!-- Dynamic Produce Cards Gallery (High-Res Images, Real Progress Bar, Badges) -->
+            <div id="produce-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Rendered dynamically via JavaScript -->
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 6: REVENUE AUDIT & REPORTS (வருவாய் தணிக்கை அறிக்கை)                     -->
+        <!-- ========================================================================= -->
+        <div id="view-reports" class="page-view max-w-4xl mx-auto space-y-8">
+
+            <div class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-farm-card space-y-8">
+
+                <!-- Page Header Banner -->
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100 no-print">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl border border-amber-200 shadow-sm">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-black text-2xl text-slate-900" data-key="audit_title">வருவாய் தணிக்கை அறிக்கை (Revenue Audit)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5" data-key="audit_sub">குறிப்பிட்ட தேதிகளுக்குள் விளைச்சல் பயிர்களின் மொத்த விற்பனை வருவாய் மற்றும் அச்சு ரசீது</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Query Form Controls -->
+                <form id="form-revenue" class="audit-query-form grid grid-cols-1 sm:grid-cols-4 gap-4 items-end bg-slate-50 p-5 rounded-2xl border border-slate-200 no-print">
+                    <div class="sm:col-span-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="lbl_target_crop">
+                            பயிர் தேர்வு *
+                        </label>
+                        <select id="rev-crop-select" required class="crop-select w-full px-3.5 py-3 rounded-xl border border-slate-200 text-xs bg-white focus:border-farm-500 transition font-medium">
+                            <option value="">Select Crop</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="lbl_start_date">
+                            தொடக்க தேதி (From) *
+                        </label>
+                        <input type="date" id="rev-start-date" required class="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-xs bg-white focus:border-farm-500 transition font-medium">
+                    </div>
+
+                    <div class="sm:col-span-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2" data-key="lbl_end_date">
+                            முடிவு தேதி (To) *
+                        </label>
+                        <input type="date" id="rev-end-date" required class="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-xs bg-white focus:border-farm-500 transition font-medium">
+                    </div>
+
+                    <div class="sm:col-span-1">
+                        <button type="submit" id="btn-calc-rev" class="w-full py-3 rounded-xl bg-farm-600 hover:bg-farm-700 active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span data-key="btn_calc_revenue">வருவாய் கணக்கிடுக</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Formal Printable Sheet / Invoice Receipt (Displayed upon query) -->
+                <div id="revenue-result-box" class="hidden printable-sheet bg-white rounded-3xl p-8 border border-slate-200 shadow-lg space-y-6">
+
+                    <!-- Sheet Header -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-farm-800 text-white flex items-center justify-center text-xl shadow-md">
+                                <i class="fa-solid fa-wheat-awn"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-black text-xl text-slate-900 leading-tight">FARMOSTOCK AGRICULTURAL HOLDINGS</h3>
+                                <p class="text-xs text-slate-400 font-tamil" data-key="lbl_audit_cert">அங்கீகரிக்கப்பட்ட விளைச்சல் வருவாய் தணிக்கை அறிக்கை</p>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                <i class="fa-solid fa-certificate text-emerald-600"></i>
+                                <span data-key="lbl_verified_status">VERIFIED AUDIT</span>
+                            </span>
+                            <span id="audit-stamp-date" class="text-[10px] text-slate-400 block mt-1 font-mono">Date: 2026-09-28</span>
+                        </div>
+                    </div>
+
+                    <!-- Audit Metadata Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                        <div>
+                            <span class="text-slate-400 font-bold uppercase block text-[10px]" data-key="audit_meta_crop">பயிர் பெயர் (Produce):</span>
+                            <span id="rev-result-crop" class="font-display text-base font-extrabold text-slate-900 mt-0.5 block">—</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-bold uppercase block text-[10px]" data-key="audit_meta_period">தணிக்கை காலம் (Period):</span>
+                            <span id="rev-result-span" class="font-mono text-xs font-bold text-slate-800 mt-0.5 block">—</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-bold uppercase block text-[10px]" data-key="audit_meta_id">பயிர் குறியீடு (Crop ID):</span>
+                            <span id="rev-result-id" class="font-mono text-xs font-bold text-slate-800 mt-0.5 block">#0</span>
+                        </div>
+                    </div>
+
+                    <!-- Financial Highlight Card -->
+                    <div class="p-6 rounded-2xl bg-gradient-to-r from-farm-900 via-farm-800 to-farm-950 text-white flex flex-wrap items-center justify-between gap-6 shadow-md">
+                        <div class="space-y-1">
+                            <span class="text-xs uppercase font-bold text-emerald-300 tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-coins text-amber-400"></i>
+                                <span data-key="lbl_total_turnover">மொத்த ஈட்டிய விற்பனை வருவாய்</span>
+                            </span>
+                            <p class="text-xs text-emerald-100 font-light" data-key="lbl_turnover_desc">
+                                குறிப்பிட்ட தேதி வரம்பில் வாடிக்கையாளர்களிடம் இருந்து பெறப்பட்ட நிகர தொகை.
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-emerald-300 uppercase block font-semibold" data-key="lbl_net_settlement">நிகரத் தொகை</span>
+                            <div id="rev-result-amount" class="font-display text-4xl font-black text-amber-300 tracking-tight mt-1">₹0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Sign-off & Print Trigger -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                        <div class="text-[11px] text-slate-400 space-y-0.5">
+                            <p data-key="audit_footer_1">இந்த அறிக்கை பண்ணை கணினி தளத்தால் தானியங்கியாக உருவாக்கப்பட்டது.</p>
+                            <p class="font-mono">FarmStock System Generated • Zero Manual Tampering</p>
+                        </div>
+
+                        <div class="no-print flex gap-3">
+                            <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-print"></i>
+                                <span data-key="btn_print_audit">அறிக்கையை அச்சிடு (Print Voucher)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Formal Dignified Footer -->
+    <footer class="bg-white border-t border-slate-200/80 py-6 px-8 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-farm-600"></span>
+                <span class="font-bold text-slate-700">FarmStock</span> — <span data-key="footer_honor">உழவர் விளைச்சல் மேலாண்மை & வருவாய் கண்காணிப்பு அமைப்பு</span>
+            </div>
+            <div class="text-[11px] text-slate-400">
+                <span data-key="footer_quote">"உழவே தலை" • Dedicated with honor to Indian Farmers</span>
+            </div>
+        </div>
+    </footer>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: PRODUCTION-GRADE ARCHITECTURE & REAL-TIME ENGINE               -->
+<!-- ========================================================================= -->
+<script>
+    // Robust Backend API Resolution: works seamlessly via http://localhost:8080 or file:///
+    const API = (window.location.protocol === 'file:' || !window.location.host)
+        ? 'http://localhost:8080/api'
+        : (window.location.origin.includes(':8080') ? '/api' : 'http://localhost:8080/api');
+
+    let cachedCrops = [];
+    let cachedStock = [];
+    let currentCategoryFilter = 'ALL';
+    let currentLang = 'ta';
+
+    // Chart.js Instances
+    let flowChartInstance = null;
+    let ratioChartInstance = null;
+
+    // =========================================================================
+    // 1. CURATED HIGH-DEFINITION PRODUCE PHOTOGRAPHY ENGINE (30+ Crops)
+    // =========================================================================
+    const PRODUCE_GALLERY = {
+        'onion': 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=700&q=80',
+        'வெங்காயம்': 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=700&q=80',
+        'shallot': 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=700&q=80',
+        'tomato': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80',
+        'தக்காளி': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80',
+        'potato': 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=700&q=80',
+        'உருளை': 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=700&q=80',
+        'carrot': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?auto=format&fit=crop&w=700&q=80',
+        'கேரட்': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?auto=format&fit=crop&w=700&q=80',
+        'beetroot': 'https://images.unsplash.com/photo-1593105544559-ecb03bf76f82?auto=format&fit=crop&w=700&q=80',
+        'பீட்ரூட்': 'https://images.unsplash.com/photo-1593105544559-ecb03bf76f82?auto=format&fit=crop&w=700&q=80',
+        'cabbage': 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=700&q=80',
+        'முட்டைக்கோஸ்': 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=700&q=80',
+        'chilli': 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?auto=format&fit=crop&w=700&q=80',
+        'மிளகாய்': 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?auto=format&fit=crop&w=700&q=80',
+        'pepper': 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?auto=format&fit=crop&w=700&q=80',
+        'garlic': 'https://images.unsplash.com/photo-1615477550927-664f33b1e95c?auto=format&fit=crop&w=700&q=80',
+        'பூண்டு': 'https://images.unsplash.com/photo-1615477550927-664f33b1e95c?auto=format&fit=crop&w=700&q=80',
+        'ginger': 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=700&q=80',
+        'இஞ்சி': 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=700&q=80',
+        'banana': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=700&q=80',
+        'வாழை': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=700&q=80',
+        'mango': 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=700&q=80',
+        'மாம்பழம்': 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=700&q=80',
+        'coconut': 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=700&q=80',
+        'தேங்காய்': 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=700&q=80',
+        'paddy': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=700&q=80',
+        'rice': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=700&q=80',
+        'நெல்': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=700&q=80',
+        'wheat': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=700&q=80',
+        'கோதுமை': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=700&q=80',
+        'corn': 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=700&q=80',
+        'maize': 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=700&q=80',
+        'சோளம்': 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=700&q=80',
+        'turmeric': 'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?auto=format&fit=crop&w=700&q=80',
+        'மஞ்சள்': 'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?auto=format&fit=crop&w=700&q=80',
+        'cotton': 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?auto=format&fit=crop&w=700&q=80',
+        'பருத்தி': 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?auto=format&fit=crop&w=700&q=80',
+        'sugarcane': 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=700&q=80',
+        'கரும்பு': 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=700&q=80',
+        'groundnut': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=700&q=80',
+        'peanut': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=700&q=80',
+        'நிலக்கடலை': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=700&q=80',
+        'வேர்க்கடலை': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=700&q=80',
+        'brinjal': 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=700&q=80',
+        'eggplant': 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=700&q=80',
+        'கத்தரிக்காய்': 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=700&q=80',
+        'okra': 'https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?auto=format&fit=crop&w=700&q=80',
+        'ladies finger': 'https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?auto=format&fit=crop&w=700&q=80',
+        'வெண்டை': 'https://images.unsplash.com/photo-1425543103986-22abb7d7e8d2?auto=format&fit=crop&w=700&q=80',
+        'drumstick': 'images/drumstick.jpg',
+        'முருங்கை': 'images/drumstick.jpg',
+        'moringa': 'images/drumstick.jpg',
+        'default': 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=700&q=80'
+    };
+
+    function resolveProduceImage(name) {
+        if (!name) return PRODUCE_GALLERY.default;
+        const lower = name.toLowerCase().trim();
+        for (const [key, url] of Object.entries(PRODUCE_GALLERY)) {
+            if (lower.includes(key)) return url;
+        }
+        return PRODUCE_GALLERY.default;
+    }
+
+    // =========================================================================
+    // 2. BILINGUAL DICTIONARY (i18n Engine: English & Tamil)
+    // =========================================================================
+    const I18N = {
+        ta: {
+            tagline: "பண்ணை விளைச்சல் மேலாண்மை",
+            nav_dashboard: "முகப்பு (Dashboard)",
+            nav_dashboard_sub: "பண்ணை நிலவரம் & தரவுகள்",
+            nav_new_crop: "புதிய பயிர் பதிவு (Add Crop)",
+            nav_new_crop_sub: "நேரடி புகைப்பட முன்னோட்டம்",
+            nav_harvest: "அறுவடை பதிவு (Log Harvest)",
+            nav_harvest_sub: "களத்து வரவு பதிவு",
+            nav_sale: "விற்பனை பதிவு (Record Sale)",
+            nav_sale_sub: "இருப்பு சரிபார்ப்புடன் கூடியது",
+            nav_inventory: "விளைச்சல் இருப்பு (Inventory)",
+            nav_inventory_sub: "புகைப்பட கேலரி & எச்சரிக்கைகள்",
+            nav_reports: "வருவாய் தணிக்கை (Audit & Sheet)",
+            nav_reports_sub: "அச்சுக்குரிய ரசீது & நிதி அறிக்கை",
+            quote_badge: "திருக்குறள் (உழவு)",
+            quote_sub: "உழவர் போற்றுதும்",
+            btn_refresh: "புதுப்பி (Sync)",
+            sys_live: "கணினி இயங்குகிறது",
+            hero_badge: "உழவுக்கும் தொழிலுக்கும் வந்தனை செய்வோம்",
+            hero_title: "வணக்கம் உழவரே! உங்கள் பண்ணை விளைச்சல் இருப்பு & வருவாய் தளம்",
+            hero_desc: "பண்ணை விளைச்சல்களின் அறுவடை வரவு, சந்தை விற்பனை, கையிருப்பு சமநிலை மற்றும் நிதி அறிக்கைகளை வெளிப்படையாகவும் துல்லியமாகவும் கண்காணிக்கும் நவீன வேளாண் தளம்.",
+            btn_hero_harvest: "அறுவடை பதிவு செய்க",
+            btn_hero_sale: "விற்பனை பதிவு செய்க",
+            btn_hero_new: "புதிய பயிர்",
+            card_total_crops: "மொத்த பயிர் வகைகள்",
+            lbl_crops_count: "வகைகள்",
+            card_crops_sub: "பதிவு செய்யப்பட்ட பயிர்கள்",
+            card_harvested: "மொத்த அறுவடை அளவு",
+            card_harvest_sub: "பண்ணை கிடங்கு வரவு",
+            card_sold: "மொத்த விற்பனை அளவு",
+            card_sold_sub: "சந்தை நுகர்வோர் வழங்கல்",
+            card_remaining: "கையிருப்பு இருப்பு",
+            card_remaining_sub: "கிடங்கில் விற்பனைக்கு தயார்",
+            chart_weekly_title: "பயிர் வரவு & விற்பனை ஒப்பீடு (Crop Flow Analysis)",
+            chart_weekly_sub: "ஒவ்வொரு பயிரின் மொத்த அறுவடை மற்றும் சந்தை விற்பனை அளவு (kg)",
+            lbl_chart_harvest: "அறுவடை",
+            lbl_chart_sold: "விற்பனை",
+            chart_ratio_title: "இருப்பு மற்றும் விற்பனை விகிதம்",
+            chart_ratio_sub: "கிடங்கு இருப்புக்கும் விற்பனையானதற்குமான விகிதம்",
+            lbl_sold_ratio: "விற்பனை",
+            lbl_stock_ratio: "கையிருப்பு",
+            quote_2_title: "“உழுவார் உலகத்தார்க்கு ஆணி அஃதாற்றாது எழுவாரை எல்லாம் பொறுத்து.”",
+            quote_2_desc: "மற்ற தொழில்களைச் செய்பவரையும் உழவரே தாங்கி நிற்கின்றனர் — குறள் 1032",
+            btn_view_vault: "முழு இருப்பை காண்க",
+            m_crop_title: "புதிய பயிர் பதிவு பக்கம் (Add Crop)",
+            m_crop_subtitle: "பதிவு செய்யும் போதே நேரடி புகைப்பட முன்னோட்டத்துடன் புதிய பயிரை இணைக்கவும்",
+            btn_back_inventory: "இருப்புப் பட்டியல்",
+            m_crop_name: "பயிர் பெயர் (Crop Name) *",
+            m_crop_photo_hint: "பெயரை தட்டச்சு செய்யும்போது தானியங்கி உயர் தெளிவுத்திறன் புகைப்படம் இணைக்கப்படும்!",
+            lbl_quick_picks: "விரைவு தேர்வுகள் (Quick Picks):",
+            m_crop_cat: "வகைப்பாடு (Category)",
+            btn_cancel: "ரத்து / முகப்பு",
+            btn_save_crop: "பயிரை பதிவு செய்",
+            lbl_live_preview: "நேரடி அட்டை முன்னோட்டம்",
+            lbl_auto_detected: "தானியங்கி பொருத்தம்",
+            lbl_expected_reserve: "தொடக்க இருப்பு",
+            lbl_preview_note: "பயிர் பதிவு செய்யப்பட்டவுடன் அறுவடை மற்றும் விற்பனை பரிவர்த்தனைகளை தொடங்கலாம்.",
+            m_harvest_title: "அறுவடை பதிவு பக்கம் (Log Harvest)",
+            m_harvest_subtitle: "பண்ணையிலிருந்து கிடங்கிற்கு புதிய விளைச்சல் வரவை பதிவு செய்க",
+            m_select_crop: "பயிர் தேர்வு (Select Target Crop) *",
+            m_harvest_qty: "அறுவடை எடை (Weight in kg) *",
+            btn_today: "இன்று (Today)",
+            btn_yesterday: "நேற்று (Yesterday)",
+            m_harvest_date: "அறுவடை தேதி (Harvest Date) *",
+            btn_save_harvest: "அறுவடையை சேமிக்க",
+            lbl_stock_impact: "இருப்பு மாற்றம் முன்னோட்டம்",
+            lbl_current_stock: "தற்போதைய கையிருப்பு:",
+            lbl_incoming_harvest: "புதிய வரவு அளவு:",
+            lbl_projected_total: "புதிய மொத்த கையிருப்பு:",
+            lbl_tip_title: "வேளாண் குறிப்பு",
+            lbl_harvest_tip: "அறுவடை பதிவு செய்யப்பட்டவுடன் உடனுக்குடன் கையிருப்பில் வரவு வைக்கப்பட்டு விற்பனைக்கு தயார் செய்யப்படும்.",
+            m_sale_title: "விற்பனை பதிவு பக்கம் (Record Sale)",
+            m_sale_subtitle: "கிடங்கு இருப்புக்கு உட்பட்டு சந்தை விற்பனை மற்றும் விலையை பதிவு செய்க",
+            lbl_inhand_stock: "கிடங்கில் தற்போதைய கையிருப்பு:",
+            err_insufficient_title: "எச்சரிக்கை: போதுமான இருப்பு இல்லை!",
+            m_sale_qty: "விற்பனை எடை (kg) *",
+            m_sale_price: "கிலோ விலை (₹ per kg) *",
+            lbl_market_rate: "சந்தை விலை விகிதம்",
+            m_sale_date: "விற்பனை தேதி (Sale Date) *",
+            btn_save_sale: "விற்பனை செய்க",
+            lbl_bill_preview: "விற்பனை ரசீது மாதிரி",
+            bill_produce: "பயிர் / Produce:",
+            bill_qty: "அளவு / Quantity:",
+            bill_rate: "கிலோ விலை / Rate:",
+            bill_gross: "மொத்த விற்பனை மதிப்பு:",
+            bill_farmer_payout: "உழவர் வருவாய்",
+            bill_remaining_after: "விற்பனைக்குப் பின் கையிருப்பு:",
+            lbl_sale_rule_note: "விதிமுறை: கிடங்கில் உள்ள கையிருப்பை விட கூடுதல் எடை விற்பனை செய்ய கணினி அனுமதிக்காது.",
+            vault_title: "பண்ணை விளைச்சல் இருப்பு பக்கம் (Produce Inventory)",
+            vault_sub: "அறுவடை - விற்பனை = கையில் மீதமுள்ள துல்லியமான இருப்பு நிலை",
+            btn_add_new_crop: "புதிய பயிர் சேர்க்க",
+            tab_all: "அனைத்தும் (All)",
+            tab_veg: "காய்கறிகள் (Vegetables)",
+            tab_fruits: "பழங்கள் (Fruits)",
+            tab_grains: "தானியங்கள் (Grains)",
+            tab_spices: "நறுமணப் பொருட்கள் (Spices)",
+            tab_other: "பிற பயிர்கள் (Other)",
+            audit_title: "வருவாய் தணிக்கை அறிக்கை (Revenue Audit)",
+            audit_sub: "குறிப்பிட்ட தேதிகளுக்குள் விளைச்சல் பயிர்களின் மொத்த விற்பனை வருவாய் மற்றும் அச்சு ரசீது",
+            lbl_target_crop: "பயிர் தேர்வு *",
+            lbl_start_date: "தொடக்க தேதி (From) *",
+            lbl_end_date: "முடிவு தேதி (To) *",
+            btn_calc_revenue: "வருவாய் கணக்கிடுக",
+            lbl_audit_cert: "அங்கீகரிக்கப்பட்ட விளைச்சல் வருவாய் தணிக்கை அறிக்கை",
+            lbl_verified_status: "VERIFIED AUDIT",
+            audit_meta_crop: "பயிர் பெயர் (Produce):",
+            audit_meta_period: "தணிக்கை காலம் (Period):",
+            audit_meta_id: "பயிர் குறியீடு (Crop ID):",
+            lbl_total_turnover: "மொத்த ஈட்டிய விற்பனை வருவாய்",
+            lbl_turnover_desc: "குறிப்பிட்ட தேதி வரம்பில் வாடிக்கையாளர்களிடம் இருந்து பெறப்பட்ட நிகர தொகை.",
+            lbl_net_settlement: "நிகரத் தொகை",
+            audit_footer_1: "இந்த அறிக்கை பண்ணை கணினி தளத்தால் தானியங்கியாக உருவாக்கப்பட்டது.",
+            btn_print_audit: "அறிக்கையை அச்சிடு (Print Voucher)",
+            footer_honor: "உழவர் விளைச்சல் மேலாண்மை & வருவாய் கண்காணிப்பு அமைப்பு",
+            lbl_unit_kg: "கிலோகிராம் (kg)",
+            quote_body: "“சுழன்றும் ஏர்ப்பின்னது உலகம் அதனால்<br>உழந்தும் உழவே தலை.”",
+            quote_author: "— திருவள்ளுவர்",
+            hero_portrait_caption: "விவசாயி — நாட்டின் முதுகெலும்பு",
+            btn_sale_100: "100% (முழுவதும்)",
+            chip_onion: "🧅 வெங்காயம் (Onion)",
+            chip_tomato: "🍅 தக்காளி (Tomato)",
+            chip_paddy: "🌾 நெல் (Paddy)",
+            chip_turmeric: "✨ மஞ்சள் (Turmeric)",
+            chip_drumstick: "🌿 முருங்கை (Drumstick)",
+            chip_coconut: "🥥 தேங்காய் (Coconut)",
+            chip_banana: "🍌 வாழை (Banana)",
+            lbl_crop_preview_badge: "புதிய பயிர் பதிவு",
+            lbl_select_crop_preview: "பயிர் தேர்வு செய்க",
+            lbl_category: "வகைப்பாடு",
+            footer_quote: "“உழவே தலை” • இந்திய உழவர்களுக்கு அர்ப்பணிக்கப்பட்டது",
+            err_insufficient_desc: "கேட்கப்பட்ட விற்பனை அளவு கிடங்கு இருப்பை விட அதிகமாக உள்ளது. விற்பனை அனுமதிக்கப்படாது."
+        },
+        en: {
+            tagline: "Produce Inventory Tracker",
+            nav_dashboard: "Dashboard",
+            nav_dashboard_sub: "Farm overview & stats",
+            nav_new_crop: "Add New Crop",
+            nav_new_crop_sub: "Live photo auto-match",
+            nav_harvest: "Log Harvest",
+            nav_harvest_sub: "Inbound farm harvest",
+            nav_sale: "Record Sale",
+            nav_sale_sub: "Strict stock verified",
+            nav_inventory: "Stock Inventory",
+            nav_inventory_sub: "Photo gallery & alerts",
+            nav_reports: "Revenue Audit",
+            nav_reports_sub: "Printable fiscal invoice",
+            quote_badge: "Thirukkural (Farming)",
+            quote_sub: "Honoring the Plough",
+            btn_refresh: "Sync Database",
+            sys_live: "System Online",
+            hero_badge: "Dignity to the Soil & Farming Hands",
+            hero_title: "Welcome Farmer! Your Produce Inventory & Sales Ledger",
+            hero_desc: "A modern precision agriculture ledger tracking fresh harvests, customer liquidation, remaining in-hand warehouse stock, and fiscal revenue audits.",
+            btn_hero_harvest: "Log Harvest Batch",
+            btn_hero_sale: "Record A Sale",
+            btn_hero_new: "Add New Crop",
+            card_total_crops: "Total Produce Crops",
+            lbl_crops_count: "Types",
+            card_crops_sub: "Enrolled active crops",
+            card_harvested: "Harvested Volume",
+            card_harvest_sub: "Inbound warehouse stock",
+            card_sold: "Sold Volume",
+            card_sold_sub: "Liquidated market sales",
+            card_remaining: "In-Hand Reserve",
+            card_remaining_sub: "Ready for liquidation",
+            chart_weekly_title: "Produce Inbound vs Market Sales (Crop Flow)",
+            chart_weekly_sub: "Total cumulative harvest and sales volume per crop (kg)",
+            lbl_chart_harvest: "Harvested",
+            lbl_chart_sold: "Liquidated",
+            chart_ratio_title: "Reserve vs Sold Ratio",
+            chart_ratio_sub: "Proportion of available stock vs dispatched volume",
+            lbl_sold_ratio: "Sold",
+            lbl_stock_ratio: "In-Hand",
+            quote_2_title: "“The ploughers are the linchpin of the whole world; for they support all.”",
+            quote_2_desc: "Farmers sustain all living souls on earth — Kural 1032",
+            btn_view_vault: "View Stock Inventory",
+            m_crop_title: "Enroll New Crop Page",
+            m_crop_subtitle: "Register agricultural produce with real-time dynamic photo preview",
+            btn_back_inventory: "Back to Inventory",
+            m_crop_name: "Produce Crop Name *",
+            m_crop_photo_hint: "Dynamic photo matching will automatically attach a curated high-def photo!",
+            lbl_quick_picks: "Quick Suggestions:",
+            m_crop_cat: "Market Classification / Category",
+            btn_cancel: "Back to Dashboard",
+            btn_save_crop: "Save & Enroll Produce",
+            lbl_live_preview: "Live Specimen Card Preview",
+            lbl_auto_detected: "Auto-Matched",
+            lbl_expected_reserve: "Initial Reserve",
+            lbl_preview_note: "Once enrolled, this crop is immediately ready for harvest and sales entries.",
+            m_harvest_title: "Log Harvest Batch Page",
+            m_harvest_subtitle: "Record fresh produce yield gathered from farm fields to warehouse",
+            m_select_crop: "Select Target Crop *",
+            m_harvest_qty: "Harvested Weight (in kg) *",
+            btn_today: "Today",
+            btn_yesterday: "Yesterday",
+            m_harvest_date: "Harvest Date *",
+            btn_save_harvest: "Save Harvest Batch",
+            lbl_stock_impact: "Stock Inbound Preview",
+            lbl_current_stock: "Current Warehouse Stock:",
+            lbl_incoming_harvest: "Incoming Fresh Yield:",
+            lbl_projected_total: "Projected New Reserve:",
+            lbl_tip_title: "Agronomy Note",
+            lbl_harvest_tip: "Harvest logs instantly credit the warehouse inventory and make stock available for sale.",
+            m_sale_title: "Record Customer Sale Page",
+            m_sale_subtitle: "Dispatch produce strictly constrained by available in-hand reserve",
+            lbl_inhand_stock: "Current In-Hand Stock:",
+            err_insufficient_title: "Strict Rule Violation: Insufficient Stock!",
+            m_sale_qty: "Sold Weight (kg) *",
+            m_sale_price: "Price per kg (₹) *",
+            lbl_market_rate: "Current market realization",
+            m_sale_date: "Sale Execution Date *",
+            btn_save_sale: "Execute Liquidated Sale",
+            lbl_bill_preview: "Sale Voucher Ticket Preview",
+            bill_produce: "Produce Crop:",
+            bill_qty: "Dispatched Qty:",
+            bill_rate: "Rate per kg:",
+            bill_gross: "Gross Sale Amount:",
+            bill_farmer_payout: "Farmer Gross Turn",
+            bill_remaining_after: "Remaining Reserve After Sale:",
+            lbl_sale_rule_note: "Business Rule: The system strictly denies dispatching more produce than present in warehouse reserve.",
+            vault_title: "Produce Stock & Warehouse Inventory",
+            vault_sub: "Harvested Yield minus Liquidated Sales = Accurate In-Hand Balance",
+            btn_add_new_crop: "Add New Crop",
+            tab_all: "All Produce",
+            tab_veg: "Vegetables",
+            tab_fruits: "Fruits",
+            tab_grains: "Grains & Cereals",
+            tab_spices: "Spices & Herbs",
+            tab_other: "Other Crops",
+            audit_title: "Revenue & Fiscal Audit Sheet",
+            audit_sub: "Query cumulative sales turnover for crops across date bounds with printable voucher",
+            lbl_target_crop: "Select Target Crop *",
+            lbl_start_date: "From Date *",
+            lbl_end_date: "To Date *",
+            btn_calc_revenue: "Compute Revenue",
+            lbl_audit_cert: "Official Farm Produce Revenue Audit Certificate",
+            lbl_verified_status: "VERIFIED AUDIT",
+            audit_meta_crop: "Produce Name:",
+            audit_meta_period: "Audit Period Range:",
+            audit_meta_id: "Crop Ledger ID:",
+            lbl_total_turnover: "Total Fiscal Sales Turnover",
+            lbl_turnover_desc: "Cumulative gross realization received from customer liquidations over selected bounds.",
+            lbl_net_settlement: "Gross Turnover",
+            audit_footer_1: "Certified computer-generated statement issued by FarmStock Ledger.",
+            btn_print_audit: "Print Formal Audit Voucher",
+            footer_honor: "Farmer Produce Inventory & Revenue Ledger System",
+            lbl_unit_kg: "Kilograms (kg)",
+            quote_body: "“However varied worldly vocations may be, they all rely on the plough. Hence, agriculture is supreme.”",
+            quote_author: "— Thiruvalluvar (Kural 1031)",
+            hero_portrait_caption: "Farmer — Backbone of the Nation",
+            btn_sale_100: "100% (All)",
+            chip_onion: "🧅 Onion",
+            chip_tomato: "🍅 Tomato",
+            chip_paddy: "🌾 Paddy",
+            chip_turmeric: "✨ Turmeric",
+            chip_drumstick: "🌿 Drumstick",
+            chip_coconut: "🥥 Coconut",
+            chip_banana: "🍌 Banana",
+            lbl_crop_preview_badge: "New Enrollment",
+            lbl_select_crop_preview: "Select Target Crop",
+            lbl_category: "Classification",
+            footer_quote: "“Agriculture is Supreme” • Dedicated with honor to Farmers",
+            err_insufficient_desc: "Requested sale quantity exceeds in-hand warehouse stock. Dispatch denied."
+        }
+    };
+
+    function localizeCategory(cat) {
+        if (!cat) return currentLang === 'ta' ? 'விளைச்சல்' : 'Produce';
+        const c = cat.toLowerCase();
+        if (c.includes('veg') || c.includes('காய்')) return currentLang === 'ta' ? 'காய்கறிகள்' : 'Vegetables';
+        if (c.includes('fruit') || c.includes('பழ')) return currentLang === 'ta' ? 'பழங்கள்' : 'Fruits';
+        if (c.includes('grain') || c.includes('cereal') || c.includes('தானி') || c.includes('நெல்')) return currentLang === 'ta' ? 'தானியங்கள்' : 'Grains';
+        if (c.includes('spice') || c.includes('நறும') || c.includes('மஞ்சள்')) return currentLang === 'ta' ? 'நறுமணப் பொருட்கள்' : 'Spices';
+        if (c.includes('plant') || c.includes('தோட்ட')) return currentLang === 'ta' ? 'தோட்டப் பயிர்' : 'Plantation';
+        if (c.includes('tuber') || c.includes('கிழ') || c.includes('உருளை')) return currentLang === 'ta' ? 'கிழங்கு வகைகள்' : 'Tubers';
+        if (c.includes('cash') || c.includes('பணப்')) return currentLang === 'ta' ? 'பணப் பயிர்' : 'Cash Crops';
+        return cat;
+    }
+
+    function localizeCropName(name) {
+        if (!name) return '';
+        const map = {
+            'onion': { ta: 'வெங்காயம் (Onion)', en: 'Onion' },
+            'tomato': { ta: 'தக்காளி (Tomato)', en: 'Tomato' },
+            'potato': { ta: 'உருளைக்கிழங்கு (Potato)', en: 'Potato' },
+            'carrot': { ta: 'கேரட் (Carrot)', en: 'Carrot' },
+            'beetroot': { ta: 'பீட்ரூட் (Beetroot)', en: 'Beetroot' },
+            'cabbage': { ta: 'முட்டைக்கோஸ் (Cabbage)', en: 'Cabbage' },
+            'chilli': { ta: 'மிளகாய் (Chilli)', en: 'Chilli' },
+            'garlic': { ta: 'பூண்டு (Garlic)', en: 'Garlic' },
+            'ginger': { ta: 'இஞ்சி (Ginger)', en: 'Ginger' },
+            'banana': { ta: 'வாழை (Banana)', en: 'Banana' },
+            'mango': { ta: 'மாம்பழம் (Mango)', en: 'Mango' },
+            'coconut': { ta: 'தேங்காய் (Coconut)', en: 'Coconut' },
+            'paddy': { ta: 'நெல் (Paddy)', en: 'Paddy' },
+            'rice': { ta: 'அரிசி (Rice)', en: 'Rice' },
+            'wheat': { ta: 'கோதுமை (Wheat)', en: 'Wheat' },
+            'corn': { ta: 'சோளம் (Corn)', en: 'Corn' },
+            'turmeric': { ta: 'மஞ்சள் (Turmeric)', en: 'Turmeric' },
+            'drumstick': { ta: 'முருங்கை (Drumstick)', en: 'Drumstick' },
+            'brinjal': { ta: 'கத்தரிக்காய் (Brinjal)', en: 'Brinjal' },
+            'okra': { ta: 'வெண்டை (Okra)', en: 'Okra' }
+        };
+        const lower = name.toLowerCase().trim();
+        for (const [k, v] of Object.entries(map)) {
+            if (lower.includes(k)) {
+                return currentLang === 'ta' ? v.ta : v.en;
+            }
+        }
+        return name;
+    }
+
+    function renderCropDropdowns() {
+        const selects = document.querySelectorAll('.crop-select');
+        const defaultLabel = currentLang === 'ta' ? 'பயிர் தேர்வு செய்க' : 'Select Target Crop';
+        const emptyLabel = currentLang === 'ta' ? 'பயிர்கள் எதுவும் இல்லை (Add Crop)' : 'No crops enrolled yet (Add Crop)';
+
+        selects.forEach(sel => {
+            const currentVal = sel.value;
+            if (!cachedCrops || cachedCrops.length === 0) {
+                sel.innerHTML = `<option value="">${emptyLabel}</option>`;
+            } else {
+                sel.innerHTML = `<option value="">${defaultLabel}</option>` +
+                    cachedCrops.map(c => `<option value="${c.id}">${localizeCropName(c.name)} (${localizeCategory(c.category)})</option>`).join('');
+            }
+            if (currentVal && cachedCrops.some(c => c.id == currentVal)) {
+                sel.value = currentVal;
+            }
+        });
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        try { localStorage.setItem('farmstock_lang', lang); } catch (e) {}
+
+        const btnTa = document.getElementById('lang-ta');
+        const btnEn = document.getElementById('lang-en');
+
+        if (lang === 'ta') {
+            btnTa.className = "px-3 py-1.5 rounded-lg transition-all font-bold bg-white text-farm-800 shadow-sm flex items-center gap-1.5";
+            btnEn.className = "px-3 py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5";
+            document.documentElement.lang = 'ta';
+        } else {
+            btnEn.className = "px-3 py-1.5 rounded-lg transition-all font-bold bg-white text-farm-800 shadow-sm flex items-center gap-1.5";
+            btnTa.className = "px-3 py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5";
+            document.documentElement.lang = 'en';
+        }
+
+        const dict = I18N[lang];
+        document.querySelectorAll('[data-key]').forEach(el => {
+            const key = el.getAttribute('data-key');
+            if (dict[key]) {
+                el.innerHTML = dict[key];
+            }
+        });
+
+        // Update ALL Dynamic Placeholders seamlessly
+        const searchInput = document.getElementById('produce-search');
+        if (searchInput) {
+            searchInput.placeholder = lang === 'ta' ? "பயிரை தேடுக (வெங்காயம், தக்காளி, முருங்கை)..." : "Search Produce (Onion, Tomato, Drumstick)...";
+        }
+
+        const cropNameInput = document.getElementById('crop-name');
+        if (cropNameInput) {
+            cropNameInput.placeholder = lang === 'ta' ? "தக்காளி, வெங்காயம், நெல், முருங்கை..." : "Tomato, Onion, Paddy, Drumstick...";
+        }
+
+        const cropCatInput = document.getElementById('crop-category');
+        if (cropCatInput) {
+            cropCatInput.placeholder = lang === 'ta' ? "காய்கறிகள், பழங்கள், தானியங்கள்..." : "Vegetables, Fruits, Grains, Spices...";
+        }
+
+        const harvestQtyInput = document.getElementById('harvest-qty');
+        if (harvestQtyInput) {
+            harvestQtyInput.placeholder = lang === 'ta' ? "எ.கா: 100.0" : "e.g. 100.0";
+        }
+
+        const saleQtyInput = document.getElementById('sale-qty');
+        if (saleQtyInput) {
+            saleQtyInput.placeholder = lang === 'ta' ? "எ.கா: 30.0" : "e.g. 30.0";
+        }
+
+        const salePriceInput = document.getElementById('sale-price');
+        if (salePriceInput) {
+            salePriceInput.placeholder = lang === 'ta' ? "எ.கா: 45.0" : "e.g. 45.0";
+        }
+
+        // Re-populate dropdowns with localized default labels
+        renderCropDropdowns();
+
+        // Re-render Views & previews with new language
+        renderProduceCards();
+        updateCropLivePreview();
+        updateHarvestPreview();
+        onSaleCropChange();
+
+        if (cachedStock.length > 0) {
+            initCharts(cachedStock);
+        }
+
+        // Update active page title
+        const currentActive = document.querySelector('.page-view.active');
+        if (currentActive) {
+            const pageId = currentActive.id.replace('view-', '');
+            updateHeaderTitle(pageId);
+        }
+    }
+
+    // =========================================================================
+    // 3. MULTI-PAGE ROUTER (Sidebar Navigation Without Modals)
+    // =========================================================================
+    function navigateTo(pageId) {
+        document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+        const targetView = document.getElementById(`view-${pageId}`);
+        if (targetView) {
+            targetView.classList.add('active');
+        }
+
+        // Update Sidebar Active Button State
+        document.querySelectorAll('#sidebar-nav button').forEach(btn => {
+            const navId = btn.getAttribute('data-nav');
+            const icon = btn.querySelector('i');
+            if (navId === pageId) {
+                btn.className = "w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-farm-50 text-farm-800 font-bold border border-farm-200/80 shadow-xs transition-all duration-200 text-left";
+                if (icon) {
+                    icon.className = icon.className.replace('text-slate-400', 'text-farm-600');
+                }
+            } else {
+                btn.className = "w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all duration-200 text-left";
+                if (icon) {
+                    icon.className = icon.className.replace('text-farm-600', 'text-slate-400');
+                }
+            }
+        });
+
+        updateHeaderTitle(pageId);
+
+        // Pre-populate previews if switching to forms
+        if (pageId === 'new-crop') {
+            updateCropLivePreview();
+        } else if (pageId === 'harvest') {
+            updateHarvestPreview();
+        } else if (pageId === 'sale') {
+            onSaleCropChange();
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateHeaderTitle(pageId) {
+        const titleEl = document.getElementById('current-page-title');
+        const subEl = document.getElementById('current-page-subtitle');
+
+        const TITLES = {
+            'dashboard': {
+                ta: 'பண்ணை முகப்பு (Dashboard)',
+                en: 'Farm Overview & Dashboard',
+                sub_ta: 'நிகழ்நேர விளைச்சல் வரவு, சந்தை விற்பனை மற்றும் இருப்பு கண்காணிப்பு',
+                sub_en: 'Real-time crop flow, customer liquidation, and reserve monitor'
+            },
+            'new-crop': {
+                ta: 'புதிய பயிர் பதிவு (Add Crop)',
+                en: 'Enroll New Agricultural Crop',
+                sub_ta: 'நேரடி புகைப்பட முன்னோட்டத்துடன் புதிய பயிரை இணைக்கவும்',
+                sub_en: 'Register produce with dynamic photo auto-matching'
+            },
+            'harvest': {
+                ta: 'அறுவடை பதிவு (Log Harvest)',
+                en: 'Log Fresh Harvest Yield',
+                sub_ta: 'பண்ணையிலிருந்து கிடங்கிற்கு புதிய விளைச்சல் வரவை பதிவு செய்க',
+                sub_en: 'Credit warehouse inventory with farm produce batches'
+            },
+            'sale': {
+                ta: 'விற்பனை பதிவு (Record Sale)',
+                en: 'Record Liquidated Produce Sale',
+                sub_ta: 'கிடங்கு இருப்புக்கு உட்பட்டு சந்தை விற்பனை மற்றும் விலையை பதிவு செய்க',
+                sub_en: 'Strictly validated customer dispatches and pricing'
+            },
+            'inventory': {
+                ta: 'விளைச்சல் இருப்பு (Stock Inventory)',
+                en: 'Produce Stock & Reserve Inventory',
+                sub_ta: 'புகைப்பட கேலரி, சதவீத முன்னேற்றம் மற்றும் இருப்பு எச்சரிக்கைகள்',
+                sub_en: 'Visual crop cards with real photos and stock thresholds'
+            },
+            'reports': {
+                ta: 'வருவாய் தணிக்கை (Revenue Audit)',
+                en: 'Fiscal Revenue & Sales Audit Sheet',
+                sub_ta: 'தேதி வாரியாக விற்பனை வருவாய் கணக்கீடு மற்றும் அச்சு ரசீது',
+                sub_en: 'Printable financial audit voucher and produce turnover'
+            }
+        };
+
+        const config = TITLES[pageId] || TITLES['dashboard'];
+        if (titleEl) titleEl.innerText = config[currentLang];
+        if (subEl) subEl.innerText = currentLang === 'ta' ? config.sub_ta : config.sub_en;
+    }
+
+    // =========================================================================
+    // 4. TOAST NOTIFICATION HUB (Elegant, Non-intrusive)
+    // =========================================================================
+    function showToast(message, type = 'success') {
+        const hub = document.getElementById('toast-hub');
+        const toast = document.createElement('div');
+        const isSuccess = type === 'success';
+
+        toast.className = `pointer-events-auto flex items-center gap-3.5 px-5 py-4 rounded-2xl shadow-xl border text-xs font-bold transition-all duration-300 transform translate-y-3 opacity-0 backdrop-blur-md ${
+            isSuccess
+                ? 'bg-slate-900/95 text-white border-farm-500 shadow-farm-950/20'
+                : 'bg-rose-950/95 text-white border-rose-500 shadow-rose-950/25'
+        }`;
+
+        toast.innerHTML = `
+            <div class="w-8 h-8 rounded-xl ${isSuccess ? 'bg-farm-500/20 text-farm-400' : 'bg-rose-500/20 text-rose-400'} flex items-center justify-center flex-shrink-0 text-sm">
+                <i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>
+            </div>
+            <div class="flex-1 pr-2">
+                <span class="block leading-snug">${message}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+        `;
+
+        hub.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.remove('translate-y-3', 'opacity-0'));
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-3');
+            setTimeout(() => toast.remove(), 350);
+        }, 4500);
+    }
+
+    // =========================================================================
+    // 5. DATA SYNC & API INTEGRATION (Spring Boot 3 REST Client)
+    // =========================================================================
+    async function syncAll(manual = false) {
+        const syncIcon = document.getElementById('sync-icon');
+        if (syncIcon) syncIcon.classList.add('fa-spin');
+
+        try {
+            await Promise.all([loadCrops(), loadStock()]);
+            if (manual) {
+                showToast(currentLang === 'ta' ? 'தரவுகள் வெற்றிகரமாக புதுப்பிக்கப்பட்டன!' : 'Database synced successfully!');
+            }
+        } catch (err) {
+            console.error('Sync failed:', err);
+            if (manual) {
+                showToast(currentLang === 'ta' ? 'தரவுத்தளத்துடன் இணைக்க முடியவில்லை. Spring Boot இயங்குகிறதா என சரிபார்க்கவும்.' : 'Failed to sync with backend. Ensure Spring Boot is running on port 8080.', 'error');
+            }
+        } finally {
+            if (syncIcon) {
+                setTimeout(() => syncIcon.classList.remove('fa-spin'), 600);
+            }
+        }
+    }
+
+    async function loadCrops() {
+        try {
+            const res = await fetch(`${API}/crops`);
+            if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+            cachedCrops = await res.json();
+
+            // Populate all crop select dropdowns with localized names and categories
+            renderCropDropdowns();
+
+            // Update stats
+            const statCrops = document.getElementById('stat-crops');
+            if (statCrops) statCrops.innerText = cachedCrops.length;
+
+        } catch (err) {
+            console.error('Error fetching crops:', err);
+        }
+    }
+
+    async function loadStock() {
+        try {
+            const res = await fetch(`${API}/stock`);
+            if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+            cachedStock = await res.json();
+
+            let totalHarvested = 0;
+            let totalSold = 0;
+            let totalAvailable = 0;
+
+            cachedStock.forEach(item => {
+                totalHarvested += (item.totalHarvested || 0);
+                totalSold += (item.totalSold || 0);
+                totalAvailable += (item.availableStock || 0);
+            });
+
+            // Update KPI Cards
+            const statH = document.getElementById('stat-harvest');
+            const statS = document.getElementById('stat-sold');
+            const statA = document.getElementById('stat-stock');
+
+            if (statH) statH.innerText = totalHarvested.toFixed(1);
+            if (statS) statS.innerText = totalSold.toFixed(1);
+            if (statA) statA.innerText = totalAvailable.toFixed(1);
+
+            // Render Charts and Produce Gallery
+            initCharts(cachedStock);
+            renderProduceCards();
+
+        } catch (err) {
+            console.error('Error fetching stock levels:', err);
+        }
+    }
+
+    // =========================================================================
+    // 6. PRODUCE INVENTORY GALLERY RENDERING & FILTERING
+    // =========================================================================
+    function setCategoryFilter(cat) {
+        currentCategoryFilter = cat;
+        document.querySelectorAll('.cat-pill').forEach(btn => {
+            const pillCat = btn.getAttribute('data-cat');
+            if (pillCat === cat) {
+                btn.className = "cat-pill px-4 py-2 rounded-xl bg-farm-600 text-white shadow-xs transition-all whitespace-nowrap font-bold";
+            } else {
+                btn.className = "cat-pill px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 transition-all whitespace-nowrap font-semibold";
+            }
+        });
+        filterCards();
+    }
+
+    function filterCards() {
+        const query = (document.getElementById('produce-search')?.value || '').toLowerCase().trim();
+        renderProduceCards(query, currentCategoryFilter);
+    }
+
+    function renderProduceCards(query = '', categoryFilter = currentCategoryFilter) {
+        const container = document.getElementById('produce-cards-container');
+        if (!container) return;
+
+        let items = cachedStock;
+
+        // Search query filter
+        if (query) {
+            items = items.filter(c => c.cropName.toLowerCase().includes(query));
+        }
+
+        // Category filter
+        if (categoryFilter && categoryFilter !== 'ALL') {
+            const filterLower = categoryFilter.toLowerCase();
+            items = items.filter(stockItem => {
+                const cropMeta = cachedCrops.find(c => c.id === stockItem.cropId);
+                const category = (cropMeta?.category || '').toLowerCase();
+                if (filterLower === 'other') {
+                    return !['vegetable', 'fruit', 'grain', 'spice'].some(k => category.includes(k));
+                }
+                return category.includes(filterLower);
+            });
+        }
+
+        // Empty state
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full py-16 text-center bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs">
+                    <div class="w-16 h-16 rounded-3xl bg-farm-50 text-farm-600 flex items-center justify-center text-3xl mx-auto mb-3">
+                        <i class="fa-solid fa-wheat-awn"></i>
+                    </div>
+                    <h4 class="font-display text-lg font-bold text-slate-800">
+                        ${currentLang === 'ta' ? 'விளைச்சல் பயிர்கள் எதுவும் கிடைக்கவில்லை' : 'No Produce Crops Found'}
+                    </h4>
+                    <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                        ${currentLang === 'ta' ? 'புதிய பயிரை பதிவு செய்ய "புதிய பயிர் பதிவு" பக்கத்திற்கு சென்று பெயர் மற்றும் வகையை உள்ளிடவும்.' : 'Click "Add New Crop" to register your farm produce with auto-matched HD photography.'}
+                    </p>
+                    <button onclick="navigateTo('new-crop')" class="mt-4 px-5 py-2.5 rounded-xl bg-farm-600 hover:bg-farm-700 text-white font-bold text-xs shadow-md transition active:scale-95 inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>${currentLang === 'ta' ? 'முதல் பயிரை பதிவு செய்க' : 'Register First Crop'}</span>
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = items.map(c => {
+            const cropMeta = cachedCrops.find(m => m.id === c.cropId);
+            const categoryName = localizeCategory(cropMeta?.category);
+            const img = resolveProduceImage(c.cropName);
+
+            const harvested = c.totalHarvested || 0;
+            const sold = c.totalSold || 0;
+            const available = c.availableStock || 0;
+
+            const percent = harvested > 0 ? Math.round((available / harvested) * 100) : 0;
+            const barWidth = Math.min(100, Math.max(0, percent));
+
+            // Dynamic badges
+            let badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+            let badgeLabel = currentLang === 'ta' ? 'நிறைவான இருப்பு' : 'Optimal Reserve';
+            let barColor = 'bg-farm-600';
+
+            if (available <= 0) {
+                badgeClass = 'bg-rose-100 text-rose-800 border-rose-200';
+                badgeLabel = currentLang === 'ta' ? 'கையிருப்பு இல்லை' : 'Out of Stock';
+                barColor = 'bg-rose-500';
+            } else if (percent < 25 || available < 30) {
+                badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+                badgeLabel = currentLang === 'ta' ? 'குறைந்த இருப்பு' : 'Low Reserve';
+                barColor = 'bg-amber-500';
+            }
+
+            return `
+                <div class="bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-farm-card hover:shadow-xl transition-all duration-300 flex flex-col group">
+                    <!-- High Resolution Produce Real Photo -->
+                    <div class="relative h-48 w-full overflow-hidden bg-slate-100">
+                        <img src="${img}" alt="${c.cropName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent"></div>
+
+                        <!-- Top Floating Badges -->
+                        <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-black/40 text-white backdrop-blur-md border border-white/20">
+                                ${categoryName}
+                            </span>
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold border ${badgeClass} shadow-xs">
+                                ${badgeLabel}
+                            </span>
+                        </div>
+
+                        <!-- Bottom Produce Title & In-Hand Stock -->
+                        <div class="absolute bottom-3 left-4 right-4 flex items-end justify-between text-white">
+                            <div>
+                                <h4 class="font-display font-black text-xl leading-tight drop-shadow-md">${localizeCropName(c.cropName)}</h4>
+                                <span class="text-[10px] font-semibold text-emerald-200 tracking-wider">ID: #${c.cropId}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] uppercase font-bold text-emerald-200 block drop-shadow-sm">${currentLang === 'ta' ? 'கையிருப்பு' : 'In-Hand'}</span>
+                                <span class="font-display text-2xl font-black ${available > 0 ? 'text-emerald-300' : 'text-rose-300'} drop-shadow-md">
+                                    ${available.toFixed(1)} <span class="text-xs font-normal">kg</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <!-- Animated Progress Bar -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-bold text-slate-600">
+                                <span>${currentLang === 'ta' ? 'கையிருப்பு சதவீதம்' : 'Stock Retention'}</span>
+                                <span class="font-extrabold ${percent < 25 ? 'text-amber-600' : 'text-farm-700'}">${percent}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-200/50">
+                                <div class="h-full rounded-full transition-all duration-700 ${barColor}" style="width: ${barWidth}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Harvest & Sold Metrics Grid -->
+                        <div class="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 text-xs">
+                            <div class="space-y-0.5">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">${currentLang === 'ta' ? 'மொத்த அறுவடை' : 'Harvested'}</span>
+                                <span class="font-display font-extrabold text-slate-800 text-sm">${harvested.toFixed(1)} kg</span>
+                            </div>
+                            <div class="space-y-0.5 text-right">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">${currentLang === 'ta' ? 'விற்பனையானது' : 'Dispatched'}</span>
+                                <span class="font-display font-extrabold text-slate-800 text-sm">${sold.toFixed(1)} kg</span>
+                            </div>
+                        </div>
+
+                        <!-- Dedicated Quick Action Buttons -->
+                        <div class="grid grid-cols-2 gap-2.5 pt-1">
+                            <button onclick="quickActionHarvest(${c.cropId})" class="py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 font-bold text-xs border border-blue-200/70 transition flex items-center justify-center gap-1.5 shadow-xs">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>${currentLang === 'ta' ? 'அறுவடை' : '+ Harvest'}</span>
+                            </button>
+                            <button onclick="quickActionSale(${c.cropId})" class="py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 font-bold text-xs border border-amber-200/70 transition flex items-center justify-center gap-1.5 shadow-xs">
+                                <i class="fa-solid fa-cart-shopping text-[10px]"></i>
+                                <span>${currentLang === 'ta' ? 'விற்பனை' : 'Sell'}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function quickActionHarvest(cropId) {
+        navigateTo('harvest');
+        const sel = document.getElementById('harvest-crop');
+        if (sel) {
+            sel.value = cropId;
+            updateHarvestPreview();
+        }
+    }
+
+    function quickActionSale(cropId) {
+        navigateTo('sale');
+        const sel = document.getElementById('sale-crop');
+        if (sel) {
+            sel.value = cropId;
+            onSaleCropChange();
+        }
+    }
+
+    // =========================================================================
+    // 7. CHART.JS VISUAL ANALYTICS
+    // =========================================================================
+    function initCharts(stockData) {
+        const labels = stockData.map(d => localizeCropName(d.cropName));
+        const harvestedData = stockData.map(d => d.totalHarvested || 0);
+        const soldData = stockData.map(d => d.totalSold || 0);
+
+        // Bar Chart: Inbound vs Outbound
+        const ctxFlow = document.getElementById('cropFlowChart');
+        if (ctxFlow) {
+            if (flowChartInstance) flowChartInstance.destroy();
+
+            flowChartInstance = new Chart(ctxFlow.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['No Produce Data'],
+                    datasets: [
+                        {
+                            label: currentLang === 'ta' ? 'அறுவடை வரவு (kg)' : 'Harvest Volume (kg)',
+                            data: harvestedData.length ? harvestedData : [0],
+                            backgroundColor: '#16A34A',
+                            borderRadius: 8,
+                            barPercentage: 0.65,
+                            categoryPercentage: 0.6
+                        },
+                        {
+                            label: currentLang === 'ta' ? 'விற்பனை அளவு (kg)' : 'Liquidated Sale (kg)',
+                            data: soldData.length ? soldData : [0],
+                            backgroundColor: '#F59E0B',
+                            borderRadius: 8,
+                            barPercentage: 0.65,
+                            categoryPercentage: 0.6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 'bold' },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 11 },
+                            padding: 10,
+                            cornerRadius: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, color: '#64748B' }
+                        },
+                        y: {
+                            grid: { color: '#F1F5F9' },
+                            beginAtZero: true,
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 10 }, color: '#94A3B8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Donut Chart: Stock vs Sold Ratio
+        const totalSold = soldData.reduce((a, b) => a + b, 0);
+        const totalAvailable = stockData.reduce((a, b) => a + (b.availableStock || 0), 0);
+
+        const lblSold = document.getElementById('chart-lbl-sold');
+        const lblRemain = document.getElementById('chart-lbl-remain');
+        if (lblSold) lblSold.innerText = `${totalSold.toFixed(1)} kg`;
+        if (lblRemain) lblRemain.innerText = `${totalAvailable.toFixed(1)} kg`;
+
+        const ctxRatio = document.getElementById('stockRatioChart');
+        if (ctxRatio) {
+            if (ratioChartInstance) ratioChartInstance.destroy();
+
+            const isZero = (totalSold === 0 && totalAvailable === 0);
+
+            ratioChartInstance = new Chart(ctxRatio.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: currentLang === 'ta' ? ['விற்பனை (Sold)', 'கையிருப்பு (In Stock)'] : ['Sold', 'In Stock'],
+                    datasets: [{
+                        data: isZero ? [1, 1] : [totalSold, totalAvailable],
+                        backgroundColor: isZero ? ['#E2E8F0', '#CBD5E1'] : ['#F59E0B', '#16A34A'],
+                        borderWidth: 3,
+                        borderColor: '#FFFFFF',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: !isZero,
+                            backgroundColor: '#0F172A',
+                            cornerRadius: 10
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // =========================================================================
+    // 8. ADD NEW CROP: LIVE PREVIEW & AUTO PHOTO MATCHING
+    // =========================================================================
+    function quickFillCrop(name, category) {
+        document.getElementById('crop-name').value = name;
+        document.getElementById('crop-category').value = category;
+        updateCropLivePreview();
+    }
+
+    function updateCropLivePreview() {
+        const rawName = document.getElementById('crop-name')?.value.trim();
+        const rawCat = document.getElementById('crop-category')?.value.trim();
+
+        const defaultName = currentLang === 'ta' ? 'தக்காளி (Tomato)' : 'Tomato';
+        const defaultCat = currentLang === 'ta' ? 'காய்கறிகள்' : 'Vegetables';
+
+        const nameInput = rawName || defaultName;
+        const catInput = rawCat || defaultCat;
+
+        const nameEl = document.getElementById('crop-preview-name');
+        const catEl = document.getElementById('crop-preview-category');
+        const imgEl = document.getElementById('crop-preview-img');
+
+        if (nameEl) nameEl.innerText = rawName ? localizeCropName(rawName) : nameInput;
+        if (catEl) catEl.innerText = rawCat ? localizeCategory(rawCat) : catInput;
+        if (imgEl) imgEl.src = resolveProduceImage(rawName || 'tomato');
+    }
+
+    // =========================================================================
+    // 9. LOG HARVEST: LIVE PREVIEW & ADDERS
+    // =========================================================================
+    function addHarvestWeight(amount) {
+        const input = document.getElementById('harvest-qty');
+        if (!input) return;
+        const current = parseFloat(input.value) || 0;
+        input.value = (current + amount).toFixed(1);
+        updateHarvestPreview();
+    }
+
+    function updateHarvestPreview() {
+        const cropId = document.getElementById('harvest-crop')?.value;
+        const qty = parseFloat(document.getElementById('harvest-qty')?.value) || 0;
+
+        const nameEl = document.getElementById('harvest-preview-name');
+        const catEl = document.getElementById('harvest-preview-cat');
+        const imgEl = document.getElementById('harvest-preview-img');
+        const currEl = document.getElementById('harvest-preview-curr');
+        const addEl = document.getElementById('harvest-preview-add');
+        const totalEl = document.getElementById('harvest-preview-total');
+
+        if (!cropId) {
+            if (nameEl) nameEl.innerText = currentLang === 'ta' ? 'பயிர் தேர்வு செய்க' : 'Select Target Crop';
+            if (catEl) catEl.innerText = currentLang === 'ta' ? 'வகைப்பாடு' : 'Category';
+            if (currEl) currEl.innerText = '0.0 kg';
+            if (addEl) addEl.innerText = `+ ${qty.toFixed(1)} kg`;
+            if (totalEl) totalEl.innerText = `${qty.toFixed(1)} kg`;
+            return;
+        }
+
+        const cropMeta = cachedCrops.find(c => c.id == cropId);
+        const stockItem = cachedStock.find(s => s.cropId == cropId);
+
+        const cropName = cropMeta?.name || 'Produce';
+        const currentAvailable = stockItem?.availableStock || 0;
+
+        if (nameEl) nameEl.innerText = localizeCropName(cropName);
+        if (catEl) catEl.innerText = localizeCategory(cropMeta?.category);
+        if (imgEl) imgEl.src = resolveProduceImage(cropName);
+        if (currEl) currEl.innerText = `${currentAvailable.toFixed(1)} kg`;
+        if (addEl) addEl.innerText = `+ ${qty.toFixed(1)} kg`;
+        if (totalEl) totalEl.innerText = `${(currentAvailable + qty).toFixed(1)} kg`;
+    }
+
+    // =========================================================================
+    // 10. RECORD SALE: STRICT WAREHOUSE STOCK VALIDATION & LIVE RECEIPT
+    // =========================================================================
+    function onSaleCropChange() {
+        const cropId = document.getElementById('sale-crop')?.value;
+        const stockItem = cachedStock.find(s => s.cropId == cropId);
+        const availableStock = stockItem ? stockItem.availableStock : 0;
+
+        const badgeBox = document.getElementById('sale-available-badge-box');
+        const valEl = document.getElementById('sale-available-val');
+        if (valEl) valEl.innerText = `${availableStock.toFixed(1)} kg`;
+
+        // Update badge styling
+        if (badgeBox) {
+            if (availableStock <= 0) {
+                badgeBox.className = "p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs text-rose-800 font-bold";
+            } else {
+                badgeBox.className = "p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-800 font-bold";
+            }
+        }
+
+        updateSaleCalculations();
+    }
+
+    function setSalePercent(pct) {
+        const cropId = document.getElementById('sale-crop')?.value;
+        const stockItem = cachedStock.find(s => s.cropId == cropId);
+        const availableStock = stockItem ? stockItem.availableStock : 0;
+
+        const targetQty = Math.max(0, availableStock * pct);
+        const qtyInput = document.getElementById('sale-qty');
+        if (qtyInput) {
+            qtyInput.value = targetQty.toFixed(1);
+            updateSaleCalculations();
+        }
+    }
+
+    function updateSaleCalculations() {
+        const cropId = document.getElementById('sale-crop')?.value;
+        const qty = parseFloat(document.getElementById('sale-qty')?.value) || 0;
+        const price = parseFloat(document.getElementById('sale-price')?.value) || 0;
+
+        const stockItem = cachedStock.find(s => s.cropId == cropId);
+        const availableStock = stockItem ? stockItem.availableStock : 0;
+        const cropMeta = cachedCrops.find(c => c.id == cropId);
+
+        // Strict Stock Guard Validation
+        const warningBox = document.getElementById('sale-stock-warning');
+        const warningText = document.getElementById('sale-stock-warning-text');
+        const submitBtn = document.getElementById('btn-submit-sale');
+
+        const isExceeding = cropId && (qty > availableStock);
+
+        if (isExceeding) {
+            warningBox.classList.remove('hidden');
+            warningText.innerText = currentLang === 'ta'
+                ? `விற்பனை செய்ய கேட்கப்பட்ட அளவு (${qty.toFixed(1)} kg) கிடங்கில் உள்ள கையிருப்பை (${availableStock.toFixed(1)} kg) விட அதிகமாக உள்ளது. பரிவர்த்தனை நிராகரிக்கப்படும்!`
+                : `Requested sale quantity (${qty.toFixed(1)} kg) exceeds available in-hand stock (${availableStock.toFixed(1)} kg). Dispatch denied!`;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            warningBox.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Live Bill Slip Receipt Update
+        const billCrop = document.getElementById('bill-crop-name');
+        const billQty = document.getElementById('bill-qty');
+        const billRate = document.getElementById('bill-rate');
+        const billTotal = document.getElementById('bill-total');
+        const billRemaining = document.getElementById('bill-remaining-stock');
+
+        const totalAmount = qty * price;
+        const remainingStock = Math.max(0, availableStock - qty);
+
+        if (billCrop) billCrop.innerText = cropMeta ? localizeCropName(cropMeta.name) : '—';
+        if (billQty) billQty.innerText = `${qty.toFixed(1)} kg`;
+        if (billRate) billRate.innerText = `₹${price.toFixed(2)} / kg`;
+        if (billTotal) billTotal.innerText = `₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (billRemaining) {
+            billRemaining.innerText = `${remainingStock.toFixed(1)} kg`;
+            billRemaining.className = isExceeding ? 'font-bold text-rose-600' : 'font-bold text-slate-800';
+        }
+    }
+
+    // =========================================================================
+    // 11. FORM SUBMISSION EVENT HANDLERS (With Elegant Spring Boot Error Handling)
+    // =========================================================================
+
+    // A. Add Crop Submission
+    document.getElementById('form-crop').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('crop-name').value.trim();
+        const category = document.getElementById('crop-category').value.trim();
+        const btn = document.getElementById('btn-submit-crop');
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+
+        try {
+            const res = await fetch(`${API}/crops`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, category })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to create crop');
+            }
+
+            showToast(currentLang === 'ta' ? `"${data.name}" பயிர் வெற்றிகரமாக பதிவு செய்யப்பட்டது!` : `Crop "${data.name}" enrolled successfully!`);
+
+            // Reset form
+            document.getElementById('crop-name').value = '';
+            document.getElementById('crop-category').value = '';
+
+            await syncAll();
+            // Critical requirement: Submitting navigates directly to the inventory screen
+            navigateTo('inventory');
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span data-key="btn_save_crop">${I18N[currentLang].btn_save_crop}</span>`;
+        }
+    });
+
+    // B. Log Harvest Submission
+    document.getElementById('form-harvest').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cropId = parseInt(document.getElementById('harvest-crop').value);
+        const quantity = parseFloat(document.getElementById('harvest-qty').value);
+        const harvestDate = document.getElementById('harvest-date').value;
+        const btn = document.getElementById('btn-submit-harvest');
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Recording...`;
+
+        try {
+            const res = await fetch(`${API}/harvests`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cropId, quantity, harvestDate })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Harvest entry failed');
+            }
+
+            showToast(currentLang === 'ta' ? `${quantity} kg அறுவடை இருப்பு சேர்க்கப்பட்டது!` : `Logged ${quantity} kg harvest yield!`);
+            document.getElementById('harvest-qty').value = '';
+
+            await syncAll();
+            navigateTo('inventory');
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-dolly"></i> <span data-key="btn_save_harvest">${I18N[currentLang].btn_save_harvest}</span>`;
+        }
+    });
+
+    // C. Record Sale Submission (Handling 400 Insufficient Stock Bad Request Gracefully)
+    document.getElementById('form-sale').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cropId = parseInt(document.getElementById('sale-crop').value);
+        const quantity = parseFloat(document.getElementById('sale-qty').value);
+        const pricePerUnit = parseFloat(document.getElementById('sale-price').value);
+        const saleDate = document.getElementById('sale-date').value;
+        const btn = document.getElementById('btn-submit-sale');
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Liquidating...`;
+
+        try {
+            const res = await fetch(`${API}/sales`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cropId, quantity, pricePerUnit, saleDate })
+            });
+
+            const data = await res.json();
+
+            // Handle 400 Bad Request exception gracefully if quantity exceeds available stock
+            if (!res.ok) {
+                let errorMsg = data.message || 'Failed to record sale';
+                if (data.details) {
+                    errorMsg = Object.values(data.details).join(', ');
+                }
+                throw new Error(errorMsg);
+            }
+
+            const totalRupees = data.totalAmount ? data.totalAmount.toFixed(2) : (quantity * pricePerUnit).toFixed(2);
+            showToast(currentLang === 'ta' ? `விற்பனை முடிந்தது! பெறப்பட்ட தொகை: ₹${totalRupees}` : `Sale confirmed! Total realization: ₹${totalRupees}`);
+
+            document.getElementById('sale-qty').value = '';
+            document.getElementById('sale-price').value = '';
+
+            await syncAll();
+            navigateTo('inventory');
+
+        } catch (err) {
+            // Elegant toast notification for business rule violation
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> <span data-key="btn_save_sale">${I18N[currentLang].btn_save_sale}</span>`;
+        }
+    });
+
+    // D. Revenue Audit Submission & Printable Voucher Generation
+    document.getElementById('form-revenue').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cropId = document.getElementById('rev-crop-select').value;
+        const startDate = document.getElementById('rev-start-date').value;
+        const endDate = document.getElementById('rev-end-date').value;
+        const btn = document.getElementById('btn-calc-rev');
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Computing...`;
+
+        try {
+            const res = await fetch(`${API}/revenue?cropId=${cropId}&startDate=${startDate}&endDate=${endDate}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Revenue calculation failed');
+            }
+
+            const box = document.getElementById('revenue-result-box');
+            box.classList.remove('hidden');
+
+            document.getElementById('rev-result-crop').innerText = localizeCropName(data.cropName);
+            document.getElementById('rev-result-span').innerText = `${data.startDate} — ${data.endDate}`;
+            document.getElementById('rev-result-id').innerText = `#${data.cropId}`;
+            document.getElementById('rev-result-amount').innerText = `₹${(data.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('audit-stamp-date').innerText = `Generated: ${new Date().toISOString().split('T')[0]}`;
+
+            showToast(currentLang === 'ta' ? `"${localizeCropName(data.cropName)}" வருவாய் கணக்கிடப்பட்டது!` : `Revenue computed for ${localizeCropName(data.cropName)}!`);
+
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-calculator"></i> <span data-key="btn_calc_revenue">${I18N[currentLang].btn_calc_revenue}</span>`;
+        }
+    });
+
+    // =========================================================================
+    // 12. DATE HELPERS & INITIALIZATION
+    // =========================================================================
+    function setDateField(inputId, offsetDays = 0) {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        const iso = d.toISOString().split('T')[0];
+        const input = document.getElementById(inputId);
+        if (input) input.value = iso;
+    }
+
+    function initDefaultDates() {
+        const now = new Date();
+        const todayIso = now.toISOString().split('T')[0];
+        const startOfMonthIso = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+        const harvestDateInput = document.getElementById('harvest-date');
+        const saleDateInput = document.getElementById('sale-date');
+        const revStartInput = document.getElementById('rev-start-date');
+        const revEndInput = document.getElementById('rev-end-date');
+
+        if (harvestDateInput) harvestDateInput.value = todayIso;
+        if (saleDateInput) saleDateInput.value = todayIso;
+        if (revStartInput) revStartInput.value = startOfMonthIso;
+        if (revEndInput) revEndInput.value = todayIso;
+    }
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', () => {
+        initDefaultDates();
+
+        // Restore language preference
+        let savedLang = 'ta';
+        try {
+            savedLang = localStorage.getItem('farmstock_lang') || 'ta';
+        } catch (e) {}
+        setLanguage(savedLang);
+
+        syncAll();
+        navigateTo('dashboard');
+    });
+</script>
+</body>
+</html>
